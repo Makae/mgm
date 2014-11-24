@@ -9,6 +9,41 @@
     <script type="text/javascript" src="js/mgm.js"></script>
   </head>
   <body>
-  <div class="mgm_map"></div>
+  <div class="mgm_wrapper">
+    <!--- TODO SET THE RIGHT ACTION -->
+    <div class="mgm_edit">
+      <form class="row" action="?admin_ajax&ajax=true" method="POST">
+        <span class="close">X</span>
+        <div class="row">
+          <div class="col col_12_12 title">Edit Marker</div>
+        </div>
+        <div class="row">
+          <div class="col col_6_12 left">
+            <div class="row">
+              <label for="gizmo_name" class="col col_3_12">Name:</label>
+              <input type="text" name="gizmo_name" class="col col_9_12" />
+            </div>
+            <div class="row mgm_position">
+              <span class="col col_3_12 label">Position:</span>
+              <div class="col col_9_12 no-padding">
+                <label for="gizmo_lat" class="">Lat:</label>
+                <input type="number" name="gizmo_lat" class="" min="-90" max="90" />
+                <label for="gizmo_lng" class="">Lng:</label>
+                <input type="number" name="gizmo_lng" class="" min="-180" max="180" />
+              </div>
+            </div>
+          </div>
+          <div class="col col_6_12 right">
+            {%CONTENT SPECIFIC%}
+          </div>
+        </div>
+        <div class="col col_12_12 actions">
+          <button class="button button-secondary cancel">Cancel</button>
+          <button class="button button-primary save clearfix">Save</button>
+        </div>
+      </form>
+    </div>
+    <div class="mgm_map"></div>
+  </div>
   </body>
 </html>
