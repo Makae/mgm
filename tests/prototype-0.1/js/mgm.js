@@ -1,4 +1,5 @@
-var mgm = (function($) {
+var mgm = typeof mgm != 'undefined' ? mgm : {};
+(function($) {
   var temp_api_key = 'AIzaSyBI6EAL6H3ndMb5YvNP6-qH-D6WivdTh7s';
   var temp_map_config = {
           'map' : {
@@ -6,10 +7,12 @@ var mgm = (function($) {
             'lng' : 0.0,
             'zoom' : 7
           },
+
           'markers' : [
             {
               'marker' : {
                 'id' : 0,
+                'name' : 'Marker 1',
                 'type' : 'standard',
                 'lat' : 51.480,
                 'lng' : 0.0,
@@ -21,6 +24,7 @@ var mgm = (function($) {
             {
               'marker' : {
                 'id' : 1,
+                'name' : 'Marker 2',
                 'type' : 'standard',
                 'lat' : 51.4801,
                 'lng' : 0.2,
@@ -30,13 +34,14 @@ var mgm = (function($) {
               }
             }
           ],
-          'content_providers' : {
+          'form_providers' : {
             'paragraph' : {
-              getContent : function(gizmo_id, cbk) {
+              render : function(gizmo_id, cbk) {
                 cbk("response from server as callback" + gizmo_id);
               }
             }
           }
+
         };
 
   var MGM_Map = function(config) {
@@ -68,7 +73,7 @@ var mgm = (function($) {
   };
 
 
-  var mgm = {
+  var _mgm = {
     config : {
       'map_selector' : '.mgm_map',
       'api_key' : ''
@@ -90,7 +95,9 @@ var mgm = (function($) {
           map.addMarker(config.markers[i]['marker'], config.markers[i]['builder'])
       });
 
-      mgm.admin.init();
+      if(typeof mgm.admin != 'undefined' && mgm.admin.initialized === false)
+        mgm.admin.init();
+      this.initialized = true;
     },
     latLngToPos : function(config) {
       return new google.maps.LatLng(config.lat, config.lng);
@@ -105,10 +112,10 @@ var mgm = (function($) {
           marker.mgm_map = mgm_map;
           marker.position = mgm.latLngToPos(marker);
 
-          var gm_marker = new google.maps.Marker(marker);
-          gm_marker.setMap(mgm_map.map);
+          marker.gm_marker = new google.maps.Marker(marker);
+          marker.gm_marker.setMap(mgm_map.map);
 
-          google.maps.event.addListener(gm_marker, 'click', function(e) {
+          google.maps.event.addListener(marker.gm_marker, 'click', function(e) {
             var callback = function(data) {
             };
             marker.onClick(e, callback);
@@ -116,7 +123,6 @@ var mgm = (function($) {
         };
 
         marker.onClick = function(e, callback) {
-          console.log(callback);
           mgm.content_manager.callProvider(marker.content_provider, marker, callback);
         };
 
@@ -151,67 +157,14 @@ var mgm = (function($) {
       paragraph : function(marker, callback) {
         callback(marker.content_data)
       },
-      setContentProvider : function(key, call) {
+      setProvider : function(key, call) {
         this[group][key] = call;
       }
     }
   };
-
-  mgm.admin = {
-    init : function() {
-      for(var i in mgm.maps)
-        this.registerAdminHandlers(mgm.maps[i]);
-    },
-
-    registerAdminHandlers : function(map) {
-      var self = this;
-      //this.hideEdit(map, 0);
-      $(map.map_root).find(".close, button.cancel").click(function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        self.hideEdit(map);
-      });
-    },
-
-    showEdit : function(map, marker) {
-      this.hideEdit(map);
-      this.loadFields(map, marker);
-    },
-
-    hideEdit : function(map, time) {
-      var time = typeof time != 'undefined' ? time : 200;
-      console.log(map.map_root);
-      $(map.map_root).find(".mgm_edit").slideUp(time);
-    },
-
-    loadFields : function(map, marker) {
-      var editDiv = $(map.map_root).find(".mgm_edit");
-      editDiv.delay(200).slideDown(200);
-    }
-  };
-
-  return mgm;
+  $.extend(mgm, _mgm);
 })(jQuery);
 
-// This is the enhancement for the admin
-var std_builder = mgm.builder.getBuilder('marker', 'standard');
-var fnBuilder = function(marker) {
-  var marker = std_builder(marker);
-
-  marker.onDrag = function(e, callback) {
-    console.log("DRAAAAAAAAG");
-  };
-
-  marker.onClick = function(e, callback) {
-    // This is for showing the edit window;
-    mgm.admin.showEdit(marker.mgm_map, marker);
-    callback();
-  };
-
-  return marker;
-};
-
-mgm.builder.setBuilder('marker', 'standard', fnBuilder);
 
 // The init method has to be executed as last thus enque with lowes priority possible (in an other file?)
 $(document).ready(function() {
