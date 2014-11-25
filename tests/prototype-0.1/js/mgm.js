@@ -62,6 +62,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   MGM_Map.prototype.addMarker = function(marker, builder) {
+    marker.gizmo_type = 'marker';
     if(typeof builder == 'function')
       marker = builder(marker);
     else if(typeof mgm.builder.marker[marker.type] != 'undefined')
