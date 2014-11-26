@@ -1,6 +1,8 @@
 /* OPTIONAL STARt */
 body, html {
   font-family: "Open Sans", Helvetica, Arial, sans-serif;
+  margin:0;
+  padding:0;
 }
 /* OPTIONAL END */
 
@@ -103,6 +105,44 @@ body, html {
 /*********************
  *      ADMIN        *
  *********************/
+
+.mgm_toolbar_wrapper {
+  background-color: #fff;
+}
+
+.mgm_toolbar {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+
+.mgm_toolbar.left {
+  float: left;
+}
+
+.mgm_toolbar.right {
+  float: right;
+}
+
+.mgm_toolbar > li {
+  float: left;
+  padding: 14px 8px;
+
+  background-color:#fff;
+
+  list-style-type: none;
+  cursor: pointer;
+}
+
+.mgm_toolbar > li.hidden {
+  visibility: hidden;
+}
+
+.mgm_toolbar > li:hover {
+  color: #2FAADD;
+  background-color:#222222;
+}
 
 .mgm_edit_wrapper {
   z-index: 20;
