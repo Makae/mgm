@@ -5,8 +5,21 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           'map' : {
             'lat' : 51.480,
             'lng' : 0.0,
-            'zoom' : 21
+            'zoom' : 19
           },
+          'polygons' : [
+            {
+              'polygon' : {
+                'id' : 0,
+                'name' : 'asdf',
+                'points' : [
+                  {'lat' : 51.48, 'lng': 0.0},
+                  {'lat' : 51.4802, 'lng': 0.0004},
+                  {'lat' : 51.4790, 'lng': 0.0008},
+                ]
+              }
+            }
+          ],
 
           'markers' : [
             {
@@ -65,14 +78,13 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
   MGM_Map.prototype.addMarker = function(marker, builder) {
     marker.gizmo_type = 'marker';
+    marker.type = marker.type || 'standard';
     marker.gizmoIdx = ++this.gizmo_counter;
 
-    if(typeof builder == 'function')
-      marker = builder(marker);
-    else if(typeof mgm.builder.marker[marker.type] != 'undefined')
-      marker = mgm.builder.marker[marker.type](marker);
-    else
-      marker = mgm.builder.marker.standard(marker);
+    if(typeof builder != 'function')
+      builder = mgm.builder.getBuilder(marker.gizmo_type, marker.type);
+
+    marker = builder(marker);
 
     marker.register(this);
     marker.idx = this.markers.length;
@@ -82,25 +94,25 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   MGM_Map.prototype.removeMarker = function(marker) {
-    for(var i in this.markers)
-      if(this.markers[i].gizmoIdx != marker.gizmoIdx)
-        continue
-      else
-        this.markers.removed = true;
+    for(var i in this.markers) {
+      if(this.markers[i].gizmoIdx == marker.gizmoIdx) {
+        this.markers[i].removed = true;
+        return;
+      }
+    }
 
     marker.unregister(this.map);
   };
 
   MGM_Map.prototype.addPolygon = function(polygon, builder) {
     polygon.gizmo_type = 'polygon';
+    polygon.type = polygon.type || 'standard';
     polygon.gizmoIdx = ++this.gizmo_counter;
 
-    if(typeof builder == 'function')
-      polygon = builder(polygon);
-    else if(typeof mgm.builder.polygon[polygon.type] != 'undefined')
-      polygon = mgm.builder.polygon[polygon.type](polygon);
-    else
-      polygon = mgm.builder.polygon.standard(polygon);
+    if(typeof builder != 'function')
+      builder = mgm.builder.getBuilder(polygon.gizmo_type, polygon.type);
+
+    polygon = builder(polygon);
 
     polygon.register(this);
     polygon.idx = this.polygons.length;
@@ -110,11 +122,12 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   MGM_Map.prototype.removePolygon = function(polygon) {
-    for(var i in this.polygons)
-      if(this.polygons[i].gizmoIdx != polygon.gizmoIdx)
-        continue
-      else
-        this.polygons.removed = true;
+    for(var i in this.polygons) {
+      if(this.polygons[i].gizmoIdx == polygon.gizmoIdx) {
+        this.polygons[i].removed = true;
+        break;
+      }
+    }
 
     polygon.unregister(this.map);
   };
@@ -139,6 +152,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
         for(var i in config.markers)
           map.addMarker(config.markers[i]['marker'], config.markers[i]['builder'])
+
+        for(var i in config.polygons)
+          map.addPolygon(config.polygons[i]['polygon'], config.polygons[i]['builder'])
       });
 
       if(typeof mgm.admin != 'undefined' && mgm.admin.initialized === false)
@@ -148,77 +164,80 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   mgm.builder = {
-    marker: {
-      standard : function(marker) {
-        var clickListenerHandler;
+    std_key : 'standard',
+    builders : {
+      marker: {
+        standard : function(marker) {
+          var clickListenerHandler;
 
-        marker.register = function(mgm_map) {
-          marker.mgm_map = mgm_map;
-          marker.position = mgm.utils.latLngToPos(marker);
+          marker.register = function(mgm_map) {
+            marker.mgm_map = mgm_map;
+            marker.position = mgm.utils.latLngToPos(marker);
 
-          marker.gm_marker = new google.maps.Marker(marker);
-          marker.gm_marker.setMap(mgm_map.map);
+            marker.gm_marker = new google.maps.Marker(marker);
+            marker.gm_marker._registered = true;
+            marker.gm_marker.setMap(mgm_map.map);
 
-          clickListenerHandler = google.maps.event.addListener(marker.gm_marker, 'click', function(e) {
-            marker.onClick(e, function(){});
-          });
-        };
+            clickListenerHandler = google.maps.event.addListener(marker.gm_marker, 'click', function(e) {
+              marker.onClick(e, function(){});
+            });
+          };
 
-        marker.unregister = function(mgm_map) {
-          clickListenerHandler.remove();
-          marker.gm_marker.setMap(null);
-        };
+          marker.unregister = function(mgm_map) {
+            clickListenerHandler.remove();
+            marker.gm_marker.setMap(null);
+          };
 
-        marker.onClick = function(e, callback) {
-          mgm.content_manager.callProvider(marker.content_provider, marker, callback);
-        };
+          marker.onClick = function(e, callback) {
+            mgm.content_manager.callProvider(marker.content_provider, marker, callback);
+          };
 
-        return marker;
+          return marker;
+        }
+      },
+      polygon: {
+        standard : function(polygon) {
+          var clickListenerHandler;
+
+          polygon.register = function(mgm_map) {
+            polygon.mgm_map = mgm_map;
+
+            polygon.paths = [];
+            for(var i in polygon.points)
+              polygon.paths.push(mgm.utils.latLngToPos(polygon.points[i]));
+
+            polygon.gm_polygon = new google.maps.Polygon(polygon);
+            polygon.gm_polygon._registered = true;
+            polygon.gm_polygon.setMap(mgm_map.map);
+            clickListenerHandler = google.maps.event.addListener(polygon.gm_polygon, 'click', function(e) {
+              polygon.onClick(e, function(){});
+            });
+          };
+
+          polygon.unregister = function(mgm_map) {
+            clickListenerHandler.remove();
+            polygon.gm_polygon.setMap(null);
+          };
+
+          polygon.onClick = function(e, callback) {
+            mgm.content_manager.callProvider(polygon.content_provider, polygon, callback);
+          };
+
+          return polygon;
+        }
       }
     },
-    polygon: {
-      standard : function(polygon) {
-        var clickListenerHandler;
 
-        polygon.register = function(mgm_map) {
-          polygon.mgm_map = mgm_map;
-
-          polygon.paths = [];
-          for(var i in polygon.corners)
-            polygon.paths.push(mgm.utils.latLngToPos(polygon.corners[i]));
-
-
-          polygon.gm_polygon = new google.maps.Polygon(polygon);
-          polygon.gm_polygon.setMap(mgm_map.map);
-
-          clickListenerHandler = google.maps.event.addListener(polygon.gm_polygon, 'click', function(e) {
-            polygon.onClick(e, function(){});
-          });
-        };
-
-        polygon.unregister = function(mgm_map) {
-          clickListenerHandler.remove();
-          polygon.gm_polygon.setMap(null);
-        };
-
-        polygon.onClick = function(e, callback) {
-          mgm.content_manager.callProvider(polygon.content_provider, polygon, callback);
-        };
-
-        return polygon;
-      }
+    getBuilder : function(gizmo_type, key) {
+      if(typeof this.builders[gizmo_type] == 'undefined')
+        return null;
+      else if(typeof this.builders[gizmo_type][key] == 'undefined')
+        return this.builders[gizmo_type][this.std_key];
+      return this.builders[gizmo_type][key];
     },
 
-    getBuilder : function(group, key) {
-      if(typeof this[group] == 'undefined')
-        return null;
-      else if(typeof this[group][key] == 'undefined')
-        return null;
-      return this[group][key];
-    },
-
-    setBuilder : function(group, key, builder) {
-      this[group][key] = builder;
+    setBuilder : function(gizmo_type, key, builder) {
+      this.builders[gizmo_type][key] = builder;
     },
   };
 
@@ -245,6 +264,24 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   mgm.utils = {
     latLngToPos : function(config) {
       return new google.maps.LatLng(config.lat, config.lng);
+    },
+
+    rad : function(x) {
+      // @src: http://stackoverflow.com/a/1502821
+      return x * Math.PI / 180;
+    },
+
+    getDistance : function(p1, p2) {
+      // @src: http://stackoverflow.com/a/1502821
+      var R = 6378137; // Earth’s mean radius in meter
+      var dLat = rad(p2.lat() - p1.lat());
+      var dLong = rad(p2.lng() - p1.lng());
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(rad(p1.lat())) * Math.cos(rad(p2.lat())) *
+        Math.sin(dLong / 2) * Math.sin(dLong / 2);
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      var d = R * c;
+      return d; // returns the distance in meter
     }
   };
 
