@@ -97,7 +97,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     for(var i in this.markers) {
       if(this.markers[i].gizmoIdx == marker.gizmoIdx) {
         this.markers[i].removed = true;
-        return;
+        break;
       }
     }
 

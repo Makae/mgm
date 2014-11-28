@@ -165,13 +165,57 @@ body, html {
 
 .mgm_toolbar > li {
   float: left;
-  padding: 14px 8px;
-
+  margin: 14px 8px;
+  height: 32px;
+  width: 32px;
   background-color:#fff;
+
+  background-image: url('../images/icons-sprite.png');
+  background-repeat: none;
+  background-color: transparent;
+  background-size: 160px 160px;
 
   list-style-type: none;
   cursor: pointer;
 }
+
+.mgm_toolbar > li.add_gizmo {
+  background-position: 0 0;
+}
+
+.mgm_toolbar > li.add_gizmo.active,
+.mgm_toolbar > li.add_gizmo:hover {
+  background-position: 0 -32px;
+}
+
+.mgm_toolbar > li.edit_gizmo {
+  background-position: -32px 0;
+}
+
+.mgm_toolbar > li.edit_gizmo.active,
+.mgm_toolbar > li.edit_gizmo:hover {
+  background-position: -32px -32px;
+}
+
+.mgm_toolbar > li.remove_gizmo {
+  background-position: -64px 0;
+}
+
+.mgm_toolbar > li.remove_gizmo.active,
+.mgm_toolbar > li.remove_gizmo:hover {
+  background-position: -64px -32px;
+}
+
+.mgm_toolbar > li.cancel {
+  background-position: -96px 0;
+}
+
+.mgm_toolbar > li.cancel.active,
+.mgm_toolbar > li.cancel:hover {
+  background-position: -96px -32px;
+}
+
+
 
 .mgm_toolbar > li.hidden {
   visibility: hidden;

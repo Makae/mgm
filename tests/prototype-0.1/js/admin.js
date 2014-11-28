@@ -79,6 +79,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
         sm.map.map.setOptions({draggableCursor: 'pointer'});
         sm.map.dm.setMap(null);
+
+        for(var i in sm.map.polygons)
+          sm.map.polygons[i].gm_polygon.setEditable(true);
       },
       exit : function(sm) {
         $(sm.map.map_root).removeClass("mode-marker");
@@ -86,6 +89,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
         sm.map.map.setOptions({draggableCursor: 'default'});
         sm.map.dm.setMap(sm.map.map);
+
+        for(var i in sm.map.polygons)
+          sm.map.polygons[i].gm_polygon.setEditable(false);
       }
     }
   };
@@ -300,6 +306,49 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             this.update();
           }
         }
+      },
+      polygon : {
+        standard : {
+          html : '<div class="row">' +
+                '<label for="gizmo_name" class="col col_3_12">Name:</label>' +
+                '<input type="text" name="gizmo_name" class="col col_9_12" />' +
+              '</div>' +
+              '<div class="row mgm_stroke_color">' +
+                '<label for="gizmo_stroke_color" class="col col_3_12">Stroke color:</label>' +
+                '<input type="text" name="gizmo_stroke_color" class="col col_9_12" />' +
+              '</div>' +
+              '<div class="row mgm_stroke_opacity">' +
+                '<label for="gizmo_stroke_opacity" class="col col_3_12">Stroke opacity:</label>' +
+                '<input type="range" name="gizmo_stroke_opacity" class="col col_9_12" min="0.0" max="1.0" step="0.01" />' +
+              '</div>' +
+              '<div class="row mgm_stroke_width">' +
+                '<label for="gizmo_stroke_width" class="col col_3_12">Stroke width:</label>' +
+                '<input type="text" name="gizmo_stroke_width" class="col col_9_12" />' +
+              '</div>',
+
+          render : function(marker, callback) {
+            var self = this;
+            $html = $(this.html);
+
+            $html.find('input[name="gizmo_name"]').val(marker.name);
+            $html.find('input[name="gizmo_lat"]').val(marker.lat);
+            $html.find('input[name="gizmo_lng"]').val(marker.lng);
+            callback($html);
+          },
+
+          update : function(marker, form) {
+            $form = $(form);
+            marker.name = $form.find('input[name="gizmo_name"]').val();
+            marker.lat = $form.find('input[name="gizmo_lat"]').val();
+            marker.lng = $form.find('input[name="gizmo_lng"]').val();
+
+            marker.gm_marker.setPosition(mgm.utils.latLngToPos(marker));
+          },
+
+          save : function(marker, form) {
+            this.update();
+          }
+        }
       }
     }
   };
@@ -432,10 +481,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     marker.onClick = function(e, callback) {
       var map_sm = marker.mgm_map.sm;
       var current_state = map_sm.currentState().name;
-      if(current_state == map_sm.STD_STATE) {
-        mgm.admin.showEdit(marker.mgm_map, marker);
-      } else if(current_state == map_sm.REMOVE_STATE) {
+
+      if(current_state == map_sm.REMOVE_STATE) {
         marker.mgm_map.removeMarker(marker);
+      } else {
+        mgm.admin.showEdit(marker.mgm_map, marker);
       }
 
       if(typeof callback == 'function')
@@ -483,15 +533,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       var map_sm = polygon.mgm_map.sm;
       var current_state = map_sm.currentState().name;
 
-      if(current_state == map_sm.STD_STATE) {
-        mgm.admin.showEdit(polygon.mgm_map, polygon);
-      } else if(current_state == map_sm.EDIT_STATE) {
-        console.log(e);
-        debugger;
-        polygon.addVertex(lat, lng);
-      } else if(current_state == map_sm.REMOVE_STATE) {
-        debugger;
+      if(current_state == map_sm.REMOVE_STATE) {
         polygon.mgm_map.removePolygon(polygon);
+      } else {
+        mgm.admin.showEdit(polygon.mgm_map, polygon);
       }
 
       if(typeof callback == 'function')
