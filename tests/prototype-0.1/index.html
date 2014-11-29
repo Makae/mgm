@@ -18,15 +18,28 @@
         <li class="remove_gizmo" data-text="Remove mode"></li>
       </ul>
       <ul class="mgm_toolbar right clearfix">
-        <li class="cancel clearfix"></li>
+        <li class="edit_map clearfix"></li>
       </ul>
     </div>
     <div class="mgm_edit_wrapper">
       <div class="mgm_edit light-shadow-bottom">
-        <form class="row" action="?admin_ajax&ajax=true" method="POST">
+        <form class="row map_form" action="?admin_ajax&ajax=true" method="POST">
           <span class="close">X</span>
           <div class="row">
-            <div class="col col_12_12 title">Edit Marker</div>
+            <div class="col col_12_12 title">Edit Map</div>
+          </div>
+          <div class="row map_form_content">
+             {%MAP_SEPECIFIC%}
+          </div>
+          <div class="col col_12_12 actions">
+            <button class="button button-secondary cancel">Cancel</button>
+            <button class="button button-primary save clearfix">Save</button>
+          </div>
+        </form>
+        <form class="row gizmo_form" action="?admin_ajax&ajax=true" method="POST">
+          <span class="close">X</span>
+          <div class="row">
+            <div class="col col_12_12 title">Edit Gizmo</div>
           </div>
           <div class="row">
             <div class="col col_6_12 left generic">

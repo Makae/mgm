@@ -1,3 +1,8 @@
+/**
+ * @author: M. Käser
+ * @date: 29.11.2014
+ * @desc: Admin section extends the core to display an ui for editing the map
+ **/
 var mgm = typeof mgm != 'undefined' ? mgm : {};
 (function($) {
   var temp_admin_config = {
@@ -34,7 +39,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
   };
 
-  MGM_StateMachine.prototype.addStates = function(name, state) {
+  MGM_StateMachine.prototype.setState = function(name, state) {
     MGM_StateMachine.prototype.states[name] = state;
   };
 
@@ -42,12 +47,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     standard : {
       name : 'standard',
       enter : function(sm) {
-        $(sm.map.map_root).find(".mgm_toolbar .cancel").addClass("hidden");
         $(sm.map.map_root).find(".mgm_toolbar .add_gizmo").addClass("active");
       },
       exit : function(sm) {
         $(sm.map.map_root).find(".mgm_toolbar .add_gizmo").removeClass("active");
-        $(sm.map.map_root).find(".mgm_toolbar .cancel").removeClass("hidden");
       }
     },
 
@@ -97,6 +100,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   mgm.admin = {
+    initialized : false,
     current_gizmo : null,
     state_machine : null,
     config : {},
@@ -106,6 +110,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         this.initDrawingManager(mgm.maps[i])
         this.registerAdminHandlers(mgm.maps[i]);
       }
+      this.initialized = true;
     },
 
     initDrawingManager : function(map) {
@@ -156,14 +161,23 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         self.hideEdit(map);
       });
 
-      $(map.map_root).find('.mgm_edit form').submit(function(e) {
+      $(map.map_root).find('.mgm_edit form.gizmo_form').submit(function(e) {
         e.preventDefault();
         e.stopImmediatePropagation();
 
         var gizmo = self.current_gizmo;
-        mgm.gizmo_form_provider.getProvider(gizmo.gizmo_type, gizmo.type).update(gizmo, this);
+        mgm.form_provider.getProvider(gizmo.gizmo_type, gizmo.type).update(gizmo, this);
         mgm.content_form_provider.getProvider(gizmo.content_provider).update(gizmo, this);
         gizmo.temporary = false;
+
+        self.hideEdit(map);
+      });
+
+      $(map.map_root).find('.mgm_edit form.map_form').submit(function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        mgm.form_provider.getProvider('map', map.type).update(map, this);
 
         self.hideEdit(map);
       });
@@ -180,8 +194,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         state_machine.switchState(state_machine.EDIT_STATE);
       });
 
-      $(map.map_root).find('.mgm_toolbar .cancel').click(function() {
-        state_machine.switchState(state_machine.STD_STATE);
+      $(map.map_root).find('.mgm_toolbar .edit_map').click(function() {
+        self.showMapEdit(map);
       });
 
       state_machine.switchState(state_machine.STD_STATE);
@@ -196,12 +210,21 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       else if(gizmo.gizmo_type == 'polygon')
         gizmo = map.addPolygon(gizmo);
 
-      this.showEdit(map, gizmo)
+      this.showEditGizmo(map, gizmo)
     },
 
-    showEdit : function(map, gizmo) {
+    showMapEdit : function(map) {
       this.hideEdit(map);
       $(map.map_root).addClass("edit");
+      $(map.map_root).find('.map_form').show();
+      $(map.map_root).find('.mgm_edit_wrapper').delay(200).slideDown(200);
+      this.loadMapFields(map);
+    },
+
+    showEditGizmo : function(map, gizmo) {
+      this.hideEdit(map);
+      $(map.map_root).addClass('edit');
+      $(map.map_root).find('.gizmo_form').show();
       this.current_gizmo = gizmo;
       this.loadFields(map, gizmo);
     },
@@ -211,8 +234,22 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       if(this.current_gizmo != null && this.current_gizmo.temporary == true)
         map.removeMarker(this.current_gizmo);
 
-      $(map.map_root).removeClass("edit");
-      $(map.map_root).find('.mgm_edit_wrapper').slideUp(time);
+      $(map.map_root).removeClass('edit');
+      $(map.map_root).find('.mgm_edit_wrapper').slideUp(time, function() {
+         $(map.map_root).find('form').hide();
+      });
+
+    },
+
+    loadMapFields : function(map) {
+      // Load generic fields which are the same each time
+      var $form = $(map.map_root).find('.mgm_edit_wrapper .map_form_content');
+
+      var loadMap = function(data) {
+        $form.html(data);
+      };
+
+      mgm.form_provider.renderProvider('map', map.config.type, map, loadMap);
     },
 
     loadFields : function(map, gizmo) {
@@ -230,7 +267,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         $generic.html(data);
       };
 
-      mgm.gizmo_form_provider.renderProvider(gizmo.gizmo_type, gizmo.type, gizmo, loadGeneric);
+      mgm.form_provider.renderProvider(gizmo.gizmo_type, gizmo.type, gizmo, loadGeneric);
     },
 
     loadSpecificFields : function(map, gizmo) {
@@ -245,28 +282,127 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     }
   };
 
-  mgm.gizmo_form_provider = {
-    renderProvider : function(gizmo_type, provider_key, gizmo, callback) {
-      if(typeof this.providers[gizmo_type] != 'undefined' && this.providers[gizmo_type][provider_key] != 'undefined')
-        this.providers[gizmo_type][provider_key].render(gizmo, callback);
+  mgm.form_provider = {
+    renderProvider : function(provider_type, provider_key, obj, callback) {
+      if(typeof this.providers[provider_type] != 'undefined' && this.providers[provider_type][provider_key] != 'undefined')
+        this.providers[provider_type][provider_key].render(obj, callback);
       else
-        this.providers[gizmo_type].standard.render(gizmo, callback);
+        this.providers[provider_type].standard.render(obj, callback);
     },
 
-    setProvider : function(gizmo_type, provider_key, provider) {
-      if(typeof this.providers[gizmo_type] == 'undefined')
-        this.providers[gizmo_type] = {};
-      this.providers[gizmo_type][provider_key] = provider;
+    setProvider : function(provider_type, provider_key, provider) {
+      if(typeof this.providers[provider_type] == 'undefined')
+        this.providers[provider_type] = {};
+      this.providers[provider_type][provider_key] = provider;
     },
 
-    getProvider : function(gizmo_type, provider_key) {
-      if(typeof this.providers[gizmo_type][provider_key] != 'undefined')
-        return this.providers[gizmo_type][provider_key];
+    getProvider : function(provider_type, provider_key) {
+      if(typeof this.providers[provider_type][provider_key] != 'undefined')
+        return this.providers[provider_type][provider_key];
       else
-        return this.providers[gizmo_type].standard;
+        return this.providers[provider_type].standard;
     },
 
     providers : {
+      map : {
+        standard : {
+          html :'<div class="col col_6_12 left">' +
+                '<div class="row">' +
+                  '<label for="map_name" class="col col_3_12">Name:</label>' +
+                  '<input type="text" name="map_name" class="col col_9_12" />' +
+                '</div>' +
+                '<div class="row mgm_position">' +
+                  '<span class="col col_3_12 label">Position:</span>' +
+                  '<div class="col col_9_12 no-padding">' +
+                    '<label for="map_lat" class="">Lat:</label>' +
+                    '<input type="number" name="map_lat" class="" min="-90" max="90" step="0.000001" />' +
+                    '<label for="map_lng" class="">Lng:</label>' +
+                    '<input type="number" name="map_lng" class="" min="-180" max="180" step="0.000001" />' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="col col_6_12 right">' +
+                '<div class="row">' +
+                  '<label for="overlay_image" class="col col_3_12">Overlay:</label>' +
+                  '<input type="text" name="overlay_image" class="col col_9_12" />' +
+                '</div>' +
+                '<div class="row">' +
+                  '<span class="col col_3_12 label">Left-Top Corner:</span>' +
+                  '<div class="col col_9_12 no-padding">' +
+                    '<label for="overlay_tl_lat" class="">Lat:</label>' +
+                    '<input type="number" name="overlay_tl_lat" class="" min="-90" max="90" step="0.000001" />' +
+                    '<label for="overlay_tl_lng" class="">Lng:</label>' +
+                    '<input type="number" name="overlay_tl_lng" class="" min="-180" max="180" step="0.000001" />' +
+                  '</div>' +
+                '</div>' +
+                '<div class="row">' +
+                  '<span class="col col_3_12 label">Bottom-Right Corner:</span>' +
+                  '<div class="col col_9_12 no-padding">' +
+                    '<label for="overlay_br_lat" class="">Lat:</label>' +
+                    '<input type="number" name="overlay_br_lat" class="" min="-90" max="90" step="0.000001" />' +
+                    '<label for="overlay_br_lng" class="">Lng:</label>' +
+                    '<input type="number" name="overlay_br_lng" class="" min="-180" max="180" step="0.000001" />' +
+                  '</div>' +
+                '</div>' +
+              '</div>',
+
+          render : function(map, callback) {
+            var self = this;
+            $html = $(this.html);
+
+            $html.find('input[name="map_name"]').val(map.config.name);
+            $html.find('input[name="map_lat"]').val(map.config.lat);
+            $html.find('input[name="map_lng"]').val(map.config.lng);
+
+
+            var overlay_config = map.config.overlay;
+            if(typeof overlay_config != 'undefined') {
+              if(typeof overlay_config.image != 'undefined') {
+                $html.find('input[name="overlay_image"]').val(overlay_config.image);
+              }
+
+              if(typeof overlay_config.top_left_coords != 'undefined') {
+                $html.find('input[name="overlay_tl_lat"]').val(overlay_config.top_left_coords.lat);
+                $html.find('input[name="overlay_tl_lng"]').val(overlay_config.top_left_coords.lng);
+              }
+
+              if(typeof overlay_config.bottom_right_coords != 'undefined') {
+                $html.find('input[name="overlay_br_lat"]').val(overlay_config.bottom_right_coords.lat);
+                $html.find('input[name="overlay_br_lng"]').val(overlay_config.bottom_right_coords.lng);
+              }
+            }
+            callback($html);
+          },
+
+          update : function(map, form) {
+            $form = $(form);
+
+            // MAP
+            map.config.name = $form.find('input[name="map_name"]').val();
+            map.config.lat = $form.find('input[name="map_lat"]').val();
+            map.config.lng = $form.find('input[name="map_lng"]').val();
+
+            // OVERLAY
+            if(typeof map.config.overlay != 'undefined')
+              var overlay_config = map.config.overlay;
+            else
+              var overlay_config = {'image':'', 'top_left_coords': {}, 'bottom_right_coords': {}};
+
+            overlay_config.image = $form.find('input[name="overlay_image"]').val();
+            overlay_config.top_left_coords.lat = $form.find('input[name="overlay_tl_lat"]').val();
+            overlay_config.top_left_coords.lng = $form.find('input[name="overlay_tl_lng"]').val();
+            overlay_config.bottom_right_coords.lat = $form.find('input[name="overlay_br_lat"]').val();
+            overlay_config.bottom_right_coords.lng = $form.find('input[name="overlay_br_lng"]').val();
+
+            map.setOverlay(overlay_config);
+          },
+
+          save : function(marker, form) {
+            this.update();
+          }
+        }
+      },
+
       marker : {
         standard : {
           html : '<div class="row">' +
@@ -307,6 +443,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           }
         }
       },
+
       polygon : {
         standard : {
           html : '<div class="row">' +
@@ -439,9 +576,12 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
   if(mgm.initialized === true)
     mgm.admin.init();
-  else
-    mgm.admin.initialized = false
 
+  $(window).on('mgm.loaded', function() {
+    mgm.admin.init();
+  });
+
+  $(window).triggerHandler('mgm.admin.loaded', {'mgm': mgm});
 })(jQuery);
 
 (function() {
@@ -485,7 +625,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       if(current_state == map_sm.REMOVE_STATE) {
         marker.mgm_map.removeMarker(marker);
       } else {
-        mgm.admin.showEdit(marker.mgm_map, marker);
+        mgm.admin.showEditGizmo(marker.mgm_map, marker);
       }
 
       if(typeof callback == 'function')
@@ -536,7 +676,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       if(current_state == map_sm.REMOVE_STATE) {
         polygon.mgm_map.removePolygon(polygon);
       } else {
-        mgm.admin.showEdit(polygon.mgm_map, polygon);
+        mgm.admin.showEditGizmo(polygon.mgm_map, polygon);
       }
 
       if(typeof callback == 'function')
