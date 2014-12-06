@@ -7,12 +7,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 (function($) {
   // Addit to the MGM-Library such that the map can be extended / changed at wish
   mgm.MGM_Map = function(config) {
+    this.config = config;
+    this.gizmos = {};
+    this.gizmo_counter = 0;
     this.map_dom = null;
     this.map = null;
-    this.markers = [];
-    this.polygons = [];
-    this.config = config;
-    this.gizmo_counter = 0;
   };
 
   mgm.MGM_Map.prototype.init = function(map_dom) {
@@ -96,61 +95,93 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     this.config.overlay = config;
   };
 
-  mgm.MGM_Map.prototype.addMarker = function(marker, builder) {
-    marker.gizmo_type = 'marker';
-    marker.type = marker.type || 'standard';
-    marker.gizmoIdx = ++this.gizmo_counter;
+  mgm.MGM_Map.prototype.addGizmo = function(gizmo) {
+    if(typeof this.gizmos[gizmo.gizmo_type] == 'undefined')
+      this.gizmos[gizmo.gizmo_type] = [];
 
-    if(typeof builder != 'function')
-      builder = mgm.builder.getBuilder(marker.gizmo_type, marker.type);
+    gizmo.gizmoIdx = ++this.gizmo_counter;
 
-    marker = builder(marker);
+    if(typeof gizmo['builder'] != 'function')
+      builder = mgm.builder.getBuilder(gizmo.gizmo_type, gizmo.type);
+    else
+      builder = gizmo['builder'];
 
-    marker.register(this);
-    marker.idx = this.markers.length;
-    this.markers.push(marker);
+    gizmo = builder(gizmo);
 
-    return marker;
+    gizmo.register(this);
+    gizmo.idx = this.gizmos[gizmo.gizmo_type].length;
+    this.gizmos[gizmo.gizmo_type].push(gizmo);
+
+    return gizmo;
   };
 
-  mgm.MGM_Map.prototype.removeMarker = function(marker) {
-    for(var i in this.markers) {
-      if(this.markers[i].gizmoIdx == marker.gizmoIdx) {
-        this.markers[i].removed = true;
+  mgm.MGM_Map.prototype.removeGizmo = function(gizmo) {
+    var gizmos = this.gizmos[gizmo.gizmo_type];
+    for(var i in gizmos) {
+      if(gizmos[i].gizmoIdx == gizmo.gizmoIdx) {
+        this.gizmos[gizmo.gizmo_type][i].removed = true;
         break;
       }
     }
 
-    marker.unregister(this.map);
+    gizmo.unregister(this.map);
   };
 
-  mgm.MGM_Map.prototype.addPolygon = function(polygon, builder) {
-    polygon.gizmo_type = 'polygon';
-    polygon.type = polygon.type || 'standard';
-    polygon.gizmoIdx = ++this.gizmo_counter;
+  // mgm.MGM_Map.prototype.addMarker = function(marker, builder) {
+  //   marker.gizmo_type = 'marker';
+  //   marker.type = marker.type || 'standard';
+  //   marker.gizmoIdx = ++this.gizmo_counter;
 
-    if(typeof builder != 'function')
-      builder = mgm.builder.getBuilder(polygon.gizmo_type, polygon.type);
+  //   if(typeof builder != 'function')
+  //     builder = mgm.builder.getBuilder(marker.gizmo_type, marker.type);
 
-    polygon = builder(polygon);
+  //   marker = builder(marker);
 
-    polygon.register(this);
-    polygon.idx = this.polygons.length;
-    this.polygons.push(polygon);
+  //   marker.register(this);
+  //   marker.idx = this.markers.length;
+  //   this.markers.push(marker);
 
-    return polygon;
-  };
+  //   return marker;
+  // };
 
-  mgm.MGM_Map.prototype.removePolygon = function(polygon) {
-    for(var i in this.polygons) {
-      if(this.polygons[i].gizmoIdx == polygon.gizmoIdx) {
-        this.polygons[i].removed = true;
-        break;
-      }
-    }
+  // mgm.MGM_Map.prototype.removeMarker = function(marker) {
+  //   for(var i in this.markers) {
+  //     if(this.markers[i].gizmoIdx == marker.gizmoIdx) {
+  //       this.markers[i].removed = true;
+  //       break;
+  //     }
+  //   }
 
-    polygon.unregister(this.map);
-  };
+  //   marker.unregister(this.map);
+  // };
+
+  // mgm.MGM_Map.prototype.addPolygon = function(polygon, builder) {
+  //   polygon.gizmo_type = 'polygon';
+  //   polygon.type = polygon.type || 'standard';
+  //   polygon.gizmoIdx = ++this.gizmo_counter;
+
+  //   if(typeof builder != 'function')
+  //     builder = mgm.builder.getBuilder(polygon.gizmo_type, polygon.type);
+
+  //   polygon = builder(polygon);
+
+  //   polygon.register(this);
+  //   polygon.idx = this.polygons.length;
+  //   this.polygons.push(polygon);
+
+  //   return polygon;
+  // };
+
+  // mgm.MGM_Map.prototype.removePolygon = function(polygon) {
+  //   for(var i in this.polygons) {
+  //     if(this.polygons[i].gizmoIdx == polygon.gizmoIdx) {
+  //       this.polygons[i].removed = true;
+  //       break;
+  //     }
+  //   }
+
+  //   polygon.unregister(this.map);
+  // };
 
   var _mgm = {
     config : {
@@ -168,11 +199,20 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         map.init(this);
         self.maps.push(map);
 
-        for(var i in config.markers)
-          map.addMarker(config.markers[i]['marker'], config.markers[i]['builder'])
+        // Load gizmos and set type values if none are set
+        for(var gizmo_type in config.gizmos) {
+          for(var i in config.gizmos[gizmo_type]) {
+            var gizmo = config.gizmos[gizmo_type][i];
+            if(typeof gizmo['gizmo_type'] == 'undefined')
+              gizmo['gizmo_type'] = gizmo_type;
+            if(typeof config.gizmos[gizmo_type][i]['type'] == 'undefined')
+              gizmo['gizmo_type'] = 'standard';
 
-        for(var i in config.polygons)
-          map.addPolygon(config.polygons[i]['polygon'], config.polygons[i]['builder'])
+            config.gizmos[gizmo_type][i] = gizmo;
+            map.addGizmo(config.gizmos[gizmo_type][i]);
+
+          }
+        }
       });
 
       this.initialized = true;

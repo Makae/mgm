@@ -71,8 +71,9 @@ class Makae_GM {
     $map = Makae_GM_Utilities::get(
       $map_meta['makae-gm-map'],
       array(
-        'map'=> $this->get_defaults('map-config'),
-        'gizmos'=> $this->get_defaults('map-gizmos')
+        'map' => $this->get_defaults('map-config'),
+        'gizmos' => $this->get_defaults('map-gizmos'),
+        'gizmo_defaults' => $this->get_defaults('gizmo_defaults')
       )
     );
     $map['id'] = $map_post->ID;
@@ -95,17 +96,29 @@ class Makae_GM {
 
   }
 
-  public function load_render_methods() {
+  public function plugins_loaded() {
     error_reporting(E_ALL);
     ini_set("display_errors", 1);
 
+    include_once '../config.php';
+
+
+    $this->init();
     if(is_admin())
       require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/makae-gm-admin-display.php';
     require_once plugin_dir_path(dirname(__FILE__)) . 'public/partials/makae-gm-public-display.php';
   }
 
+  private function init() {
+    $this->registered_gizmos = array(
+      'marker' => array(
+
+       )
+    );
+  }
+
   private function define_general_hooks () {
-    $this->loader->add_action('plugins_loaded', $this, 'load_render_methods');
+    $this->loader->add_action('plugins_loaded', $this, 'plugins_loaded');
     $this->loader->add_action('wp_enqueue_scripts', $this, 'enqueue_scripts');
     $this->loader->add_action('wp_enqueue_scripts', $this, 'enqueue_styles');
     $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_scripts');
@@ -152,7 +165,7 @@ class Makae_GM {
   public function get_defaults($key) {
     switch($key) {
       case 'map-config':
-        return apply_filters('makae-gm-default-map-config',
+        return apply_filters('makae-gm-map-config-default',
           array(
             'type' => 'standard',
             'lat' => 40.712216,
@@ -163,12 +176,22 @@ class Makae_GM {
       break;
 
       case 'map-gizmos':
-        return apply_filters('makae-gm-default-map-gizmos', array());
+        return apply_filters('makae-gm-map-gizmos-default', array('markers'=>array(), 'polygons'=>array()));
+      break;
+
+      case 'gizmo-defaults':
+        $gizmos = $this->gizmo_factory->getClasses();
+        $gizmo_defaults = array();
+
+        foreach($gizmos as $gizmo)
+          $gizmo_defaults[$gizmo::getType()] = $gizmo::getDefaults();
+
+        return apply_filters('makae-gm-gizmo-defaults', $gizmo_defaults);
       break;
 
       default:
         return null;
-        break;
+      break;
     }
   }
 

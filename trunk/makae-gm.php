@@ -22,11 +22,6 @@
 if(!defined('WPINC'))
   die;
 
-error_reporting(E_ALL);
-ini_set("display_errors", 1);
-
-include_once 'config.php';
-
 function activate_makae_gm() {
   require_once plugin_dir_path( __FILE__ ) . 'includes/class-makae-gm-activator.php';
   Makae_GM_Activator::activate();

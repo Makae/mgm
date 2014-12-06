@@ -131,20 +131,19 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       google.maps.event.addListener(map.dm, 'markercomplete', function(gm_marker) {
         if(gm_marker._registerd == true)
           return;
-        var extract = mgm.extractor.getExtractor('marker', 'standard');
-        var marker = extract(gm_marker);
         gm_marker.setMap(null);
-        map.addMarker(marker);
+
+        var extract = mgm.extractor.getExtractor('marker', 'standard');
+        map.addGizmo(extract(gm_marker));
       });
 
       google.maps.event.addListener(map.dm, 'polygoncomplete', function(gm_polygon) {
         if(gm_polygon._registerd == true)
           return;
+        gm_polygon.setMap(null);
 
         var extract = mgm.extractor.getExtractor('polygon', 'standard');
-        var polygon = extract(gm_polygon);
-        gm_polygon.setMap(null);
-        map.addPolygon(polygon);
+        map.addGizmo(extract(gm_polygon));
       });
 
     },
@@ -164,6 +163,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       $(map.map_root).find('.mgm_edit .gizmo_form .save').off('click').click(function() {
         var gizmo = self.current_gizmo;
         var $form = $(this).closest('.mgm_form');
+
         mgm.form_provider.getProvider(gizmo.gizmo_type, gizmo.type).update(gizmo, $form);
         mgm.content_form_provider.getProvider(gizmo.content_provider).update(gizmo, $form);
 
@@ -194,17 +194,6 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
       state_machine.switchState(state_machine.STD_STATE);
       map.sm = state_machine;
-    },
-
-    registerGizmo : function(map, gizmo) {
-      gizmo.temporary = true;
-
-      if(gizmo.gizmo_type == 'marker')
-        gizmo = map.addMarker(gizmo);
-      else if(gizmo.gizmo_type == 'polygon')
-        gizmo = map.addPolygon(gizmo);
-
-      this.showEditGizmo(map, gizmo)
     },
 
     showMapEdit : function(map) {
@@ -457,23 +446,31 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                 '<input type="text" name="gizmo_stroke_width" class="col col_9_12" />' +
               '</div>',
 
-          render : function(marker, callback) {
+          render : function(gizmo, callback) {
             var self = this;
             $html = $(this.html);
 
-            $html.find('input[name="gizmo_name"]').val(marker.name);
-            $html.find('input[name="gizmo_lat"]').val(marker.lat);
-            $html.find('input[name="gizmo_lng"]').val(marker.lng);
+            $html.find('input[name="gizmo_stroke_color"]').val(gizmo.strokeColor);
+            $html.find('input[name="gizmo_stroke_opacity"]').val(gizmo.strokeOpacity);
+            $html.find('input[name="gizmo_stroke_width"]').val(gizmo.strokeWeight);
             callback($html);
           },
 
-          update : function(marker, form) {
+          update : function(gizmo, form) {
             $form = $(form);
-            marker.name = $form.find('input[name="gizmo_name"]').val();
-            marker.lat = $form.find('input[name="gizmo_lat"]').val();
-            marker.lng = $form.find('input[name="gizmo_lng"]').val();
+            gizmo.strokeColor = $html.find('input[name="gizmo_stroke_color"]').val();
+            gizmo.strokeOpacity = $html.find('input[name="gizmo_stroke_opacity"]').val();
+            gizmo.strokeWeight = $html.find('input[name="gizmo_stroke_width"]').val();
 
-            marker.gm_marker.setPosition(mgm.utils.latLngToPos(marker));
+            this.refreshBinded(gizmo);
+          },
+
+          refreshBinded : function(gizmo) {
+            gizmo.gm_polygon.strokeColor = gizmo.strokeColor;
+            gizmo.gm_polygon.strokeOpacity = gizmo.strokeOpacity;
+            gizmo.gm_polygon.strokeWeight = gizmo.strokeWeight;
+            gizmo.gm_polygon.fillColor = gizmo.fillColor;
+            gizmo.gm_polygon.fillOpacity = gizmo.fillOpacity;
           },
 
           save : function(marker, form) {
@@ -527,11 +524,14 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       marker: {
         standard : function(gm_marker) {
           return {
+            'gizmo_type' : 'marker',
+            'type' : 'standard',
             'lat' : mgm.admin.utils.round(gm_marker.getPosition().lat()),
             'lng' : mgm.admin.utils.round(gm_marker.getPosition().lng())
           };
         }
       },
+
       polygon: {
         standard : function(gm_polygon) {
           var arrVertecies = gm_polygon.latLngs.getArray()[0];
@@ -544,11 +544,14 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           }
 
           return {
+            'gizmo_type' : 'polygon',
+            'type' : 'standard',
             'points' : points
           };
         }
       },
     },
+
     getExtractor : function(gizmo_type, key) {
       if(typeof this.extractors[gizmo_type] == 'undefined')
         return null;
