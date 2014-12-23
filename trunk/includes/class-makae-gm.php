@@ -48,11 +48,11 @@ class Makae_GM {
 
   private function load_dependencies() {
 
-    require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-makae-gm-utilities.php';
-    require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-makae-gm-loader.php';
-    require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-makae-gm-i18n.php';
-    require_once plugin_dir_path(dirname(__FILE__)) . 'admin/class-makae-gm-admin.php';
-    require_once plugin_dir_path(dirname(__FILE__)) . 'public/class-makae-gm-public.php';
+    require_once plugin_dir_path(__FILE__) . '/class-makae-gm-utilities.php';
+    require_once Makae_GM_Utilities::pluginDir(__FILE__) . 'includes/class-makae-gm-loader.php';
+    require_once Makae_GM_Utilities::pluginDir(__FILE__) . 'includes/class-makae-gm-i18n.php';
+    require_once Makae_GM_Utilities::pluginDir(__FILE__) . 'admin/class-makae-gm-admin.php';
+    require_once Makae_GM_Utilities::pluginDir(__FILE__) . 'public/class-makae-gm-public.php';
 
     $this->loader = new Makae_GM_Loader();
   }
@@ -99,14 +99,13 @@ class Makae_GM {
   public function plugins_loaded() {
     error_reporting(E_ALL);
     ini_set("display_errors", 1);
-
-    include_once '../config.php';
+    include_once Makae_GM_Utilities::pluginDir(__FILE__) . 'config.php';
 
 
     $this->init();
     if(is_admin())
-      require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/makae-gm-admin-display.php';
-    require_once plugin_dir_path(dirname(__FILE__)) . 'public/partials/makae-gm-public-display.php';
+      require_once Makae_GM_Utilities::pluginDir(__FILE__) . 'admin/partials/makae-gm-admin-display.php';
+    require_once Makae_GM_Utilities::pluginDir(__FILE__) . 'public/partials/makae-gm-public-display.php';
   }
 
   private function init() {

@@ -5,7 +5,7 @@
  **/
 var mgm = typeof mgm != 'undefined' ? mgm : {};
 (function($) {
-  // Addit to the MGM-Library such that the map can be extended / changed at wish
+  // Add it to the MGM-Library such that the map can be extended / changed at wish
   mgm.MGM_Map = function(config) {
     this.config = config;
     this.gizmos = {};
@@ -21,7 +21,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         zoom: this.config.zoom
       };
     this.map_dom = map_dom;
-    this.map_root = $(map_dom).closest(".mgm_wrapper").get(0);
+    this.map_root = $(map_dom).closest('.mgm_wrapper').get(0);
     this.map = new google.maps.Map(map_dom, mapOptions);
 
     if(typeof this.config.overlay != 'undefined') {
@@ -127,61 +127,28 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     gizmo.unregister(this.map);
   };
 
-  // mgm.MGM_Map.prototype.addMarker = function(marker, builder) {
-  //   marker.gizmo_type = 'marker';
-  //   marker.type = marker.type || 'standard';
-  //   marker.gizmoIdx = ++this.gizmo_counter;
+  mgm.MGM_Map.prototype.getGizmos = function(only_active, unregister) {
+    var only_active = typeof only_active == 'undefined' ? true : false;
+    var unregister = typeof unregister == 'undefined' ? true : false;
 
-  //   if(typeof builder != 'function')
-  //     builder = mgm.builder.getBuilder(marker.gizmo_type, marker.type);
+    if(!unregister && !only_active)
+      return this.gizmos;
 
-  //   marker = builder(marker);
+    var gizmos = [];
+    for(var i = 0; i < this.gizmos.length; i++) {
+      var gizmo = this.gizmos[i];
+      if(only_active && (gizmo.removed || gizmo.temporary))
+        continue;
+      if(unregister)
+        gizmo.unregister();
+      gizmos.pushd(gizmo);
+    }
+    return gizmos;
+  };
 
-  //   marker.register(this);
-  //   marker.idx = this.markers.length;
-  //   this.markers.push(marker);
-
-  //   return marker;
-  // };
-
-  // mgm.MGM_Map.prototype.removeMarker = function(marker) {
-  //   for(var i in this.markers) {
-  //     if(this.markers[i].gizmoIdx == marker.gizmoIdx) {
-  //       this.markers[i].removed = true;
-  //       break;
-  //     }
-  //   }
-
-  //   marker.unregister(this.map);
-  // };
-
-  // mgm.MGM_Map.prototype.addPolygon = function(polygon, builder) {
-  //   polygon.gizmo_type = 'polygon';
-  //   polygon.type = polygon.type || 'standard';
-  //   polygon.gizmoIdx = ++this.gizmo_counter;
-
-  //   if(typeof builder != 'function')
-  //     builder = mgm.builder.getBuilder(polygon.gizmo_type, polygon.type);
-
-  //   polygon = builder(polygon);
-
-  //   polygon.register(this);
-  //   polygon.idx = this.polygons.length;
-  //   this.polygons.push(polygon);
-
-  //   return polygon;
-  // };
-
-  // mgm.MGM_Map.prototype.removePolygon = function(polygon) {
-  //   for(var i in this.polygons) {
-  //     if(this.polygons[i].gizmoIdx == polygon.gizmoIdx) {
-  //       this.polygons[i].removed = true;
-  //       break;
-  //     }
-  //   }
-
-  //   polygon.unregister(this.map);
-  // };
+  mgm.MGM_Map.prototype.getConfig = function() {
+    return this.config;
+  };
 
   var _mgm = {
     config : {
@@ -217,7 +184,24 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
       this.initialized = true;
       $(window).triggerHandler('mgm.loaded', {'mgm': mgm});
-    }
+    },
+    getMap : function(idx) {
+      if(idx >= this.map.length || idx < 0)
+        return null;
+      return this.maps[idx];
+    },
+    getMapData : function(idx) {
+      var map = this.getMap(idx);
+      if(map == null)
+        return null;
+      var config = map.config;
+      map.gizmos =
+    },
+    getMap : function(idx) {
+      if(idx >= this.map.length || idx < 0)
+        return null;
+      return this.maps[idx];
+    };
   };
 
   mgm.builder = {
@@ -243,6 +227,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           marker.unregister = function(mgm_map) {
             clickListenerHandler.remove();
             marker.gm_marker.setMap(null);
+            delete marker.gm_marker;
           };
 
           marker.onClick = function(e, callback) {
@@ -274,6 +259,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           polygon.unregister = function(mgm_map) {
             clickListenerHandler.remove();
             polygon.gm_polygon.setMap(null);
+            delete polygon.gm_polygon;
           };
 
           polygon.onClick = function(e, callback) {
@@ -341,11 +327,12 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       return d; // returns the distance in meter
     }
   };
+
   $.extend(mgm, _mgm);
+  mgm.init();
 })(jQuery);
 
-
 // The init method has to be executed as last thus enque with lowes priority possible (in an other file?)
-jQuery(document).ready(function() {
-  mgm.init();
-});
+// jQuery(document).ready(function() {
+
+// });

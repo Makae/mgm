@@ -1,32 +1,49 @@
-(function( $ ) {
-  'use strict';
+var mgm = typeof mgm != 'undefined' ? mgm : {};
+(function($) {
+  var admin = {
+  init : function() {
 
-  /**
-   * All of the code for your Dashboard-specific JavaScript source
-   * should reside in this file.
-   *
-   * Note that this assume you're going to use jQuery, so it prepares
-   * the $ function reference to be used within the scope of this
-   * function.
-   *
-   * From here, you're able to define handlers for when the DOM is
-   * ready:
-   *
-   * $(function() {
-   *
-   * });
-   *
-   * Or when the window is loaded:
-   *
-   * $( window ).load(function() {
-   *
-   * });
-   *
-   * ...and so on.
-   *
-   * Remember that ideally, we should not attach any more than a single DOM-ready or window-load handler
-   * for any particular page. Though other scripts in WordPress core, other plugins, and other themes may
-   * be doing this, we should try to minimize doing that in our own work.
-   */
+    this.mapUpdate();
+  },
 
+  mapUpdate : function() {
+    if($('input[name="mgm-map-data"]').length == 0)
+      return;
+
+    $('input[type="submit"]').click(function(e) {
+      var map = mgm.getMap(0);
+      var data = map.getData();
+
+    });
+  },
+
+  customImageUpload : function(context) {
+   var meta_image_frame;
+   $(context).find(".image-upload").click(function(e){
+     e.preventDefault();
+
+     if(meta_image_frame) {
+     meta_image_frame.open();
+     return;
+     }
+
+     meta_image_frame = wp.media.frames.meta_image_frame = wp.media({
+     title: "Upload",
+     button: { text:  "Upload" },
+     library: { type: 'image' }
+     });
+
+     meta_image_frame.on('select', function(){
+     var media_attachment = meta_image_frame.state().get('selection').first().toJSON();
+     $(context).find(".image-value").val(media_attachment.url);
+     });
+
+     // Opens the media library frame.
+     meta_image_frame.open();
+   });
+  }
+
+ };
+ admin.init();
+ mgm.wp_admin = admin;
 })( jQuery );

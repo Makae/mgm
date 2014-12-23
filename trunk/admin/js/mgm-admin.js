@@ -133,7 +133,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           return;
         gm_marker.setMap(null);
 
-        var extract = mgm.extractor.getExtractor('marker', 'standard');
+        var extract = mgm.map_extractor.getExtractor('marker', 'standard');
         map.addGizmo(extract(gm_marker));
       });
 
@@ -142,7 +142,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           return;
         gm_polygon.setMap(null);
 
-        var extract = mgm.extractor.getExtractor('polygon', 'standard');
+        var extract = mgm.map_extractor.getExtractor('polygon', 'standard');
         map.addGizmo(extract(gm_polygon));
       });
 
@@ -305,9 +305,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                 '</div>' +
               '</div>' +
               '<div class="col col_6_12 right">' +
-                '<div class="row">' +
+                '<div class="row overlay_row">' +
                   '<label for="overlay_image" class="col col_3_12">Overlay:</label>' +
-                  '<input type="text" name="overlay_image" class="col col_9_12" />' +
+                  '<input type="text" name="overlay_image" class="col col_6_12 image-value" />' +
+                  '<button class="button button-primary image-upload col col_3_12" name="overlay_image">Set Image</button>' +
                 '</div>' +
                 '<div class="row">' +
                   '<span class="col col_3_12 label">Left-Top Corner:</span>' +
@@ -354,6 +355,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                 $html.find('input[name="overlay_br_lng"]').val(overlay_config.bottom_right_coords.lng);
               }
             }
+
+            mgm.wp_admin.customImageUpload($html.find(".overlay_row"));
+
             callback($html);
           },
 
@@ -518,9 +522,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     }
   };
 
-  mgm.extractor = {
+  mgm.map_extractor = {
     std_key: 'standard',
-    extractors: {
+    map_extractors: {
       marker: {
         standard : function(gm_marker) {
           return {
@@ -553,11 +557,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     },
 
     getExtractor : function(gizmo_type, key) {
-      if(typeof this.extractors[gizmo_type] == 'undefined')
+      if(typeof this.map_extractors[gizmo_type] == 'undefined')
         return null;
-      else if(typeof this.extractors[gizmo_type][key] == 'undefined')
-        return this.extractors[gizmo_type][this.std_key];
-      return this.extractors[gizmo_type][key];
+      else if(typeof this.map_extractors[gizmo_type][key] == 'undefined')
+        return this.map_extractors[gizmo_type][this.std_key];
+      return this.map_extractors[gizmo_type][key];
     },
 
     setBuilder : function(gizmo_type, key, builder) {
@@ -569,7 +573,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     round : function(coord_segment) {
       return Math.round(Math.pow(10, mgm.admin.config.ll_dec_points) * coord_segment) / Math.pow(10, mgm.admin.config.ll_dec_points);
     }
-  }
+  };
 
   if(mgm.initialized === true)
     mgm.admin.init();
@@ -580,130 +584,3 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
   $(window).triggerHandler('mgm.admin.loaded', {'mgm': mgm});
 })(jQuery);
-
-(function() {
-  var std_builder = mgm.builder.getBuilder('marker', 'standard');
-  var fnBuilder = function(marker) {
-
-    var dragendListenerHandler;
-
-    marker.draggable = true;
-    var marker = std_builder(marker);
-
-    marker._register = marker.register;
-    marker.register = function(mgm_map) {
-      marker._register(mgm_map);
-      dragendListenerHandler = google.maps.event.addListener(marker.gm_marker, 'dragend', function(e) {
-        marker.onDragEnd(e);
-      });
-    }
-
-    marker._unregister = marker.unregister;
-    marker.unregister = function(mgm_map) {
-      dragendListenerHandler.remove();
-      marker._unregister(mgm_map);
-    }
-
-    marker.update = function() {
-      var pos = marker.gm_marker.getPosition();
-      marker.lat = mgm.admin.utils.round(pos.lat());
-      marker.lng = mgm.admin.utils.round(pos.lng());
-      marker.gm_marker.setPosition(mgm.utils.latLngToPos(marker));
-    };
-
-    marker.onDragEnd = function(e, callback) {
-      marker.update();
-    };
-
-    marker.onClick = function(e, callback) {
-      var map_sm = marker.mgm_map.sm;
-      var current_state = map_sm.currentState().name;
-
-      if(current_state == map_sm.REMOVE_STATE) {
-        marker.mgm_map.removeMarker(marker);
-      } else {
-        mgm.admin.showEditGizmo(marker.mgm_map, marker);
-      }
-
-      if(typeof callback == 'function')
-        callback();
-    };
-
-    return marker;
-  };
-
-  mgm.builder.setBuilder('marker', 'standard', fnBuilder);
-})();
-
-(function() {
-  var std_builder = mgm.builder.getBuilder('polygon', 'standard');
-  var fnBuilder = function(polygon) {
-
-    var dragendListenerHandler;
-
-    polygon.draggable = true;
-    var polygon = std_builder(polygon);
-
-    polygon._register = polygon.register;
-    polygon.register = function(mgm_map) {
-      polygon._register(mgm_map);
-      dragendListenerHandler = google.maps.event.addListener(polygon.gm_polygon, 'dragend', function(e) {
-        polygon.onDragEnd(e);
-      });
-    }
-
-    polygon._unregister = polygon.unregister;
-    polygon.unregister = function(mgm_map) {
-      dragendListenerHandler.remove();
-      polygon._unregister(mgm_map);
-    }
-
-    polygon.update = function() {
-      // ITERATE OVER EACH VERTEX
-    };
-
-    polygon.onDragEnd = function(e, callback) {
-      //polygon.update();
-    };
-
-    polygon.onClick = function(e, callback) {
-      var map_sm = polygon.mgm_map.sm;
-      var current_state = map_sm.currentState().name;
-
-      if(current_state == map_sm.REMOVE_STATE) {
-        polygon.mgm_map.removePolygon(polygon);
-      } else {
-        mgm.admin.showEditGizmo(polygon.mgm_map, polygon);
-      }
-
-      if(typeof callback == 'function')
-        callback();
-    };
-
-    return polygon;
-  };
-
-  mgm.builder.setBuilder('polygon', 'standard', fnBuilder);
-})();
-
-(function() {
-  var provider = {
-    html : '<label for="gizmo_content_paragraph">Paragraph</label>' +
-      '<textarea name="gizmo_content_paragraph"></textarea>',
-
-    render : function(gizmo, callback) {
-      $html = $(this.html);
-      $html.find('textarea[name="gizmo_content_paragraph"]').val(gizmo.content_data);
-      callback($html);
-    },
-
-    update : function(gizmo, form) {
-      gizmo.content_data = $(form).find('textarea[name="gizmo_content_paragraph"]');
-    },
-
-    save : function(gizmo, form) {
-      this.update();
-    }
-  };
-  mgm.content_form_provider.setProvider('paragraph', provider);
-})();

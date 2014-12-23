@@ -17,7 +17,6 @@
  * Text Domain:       makae-gm
  * Domain Path:       /languages
  */
-
 // If this file is called directly, abort.
 if(!defined('WPINC'))
   die;
@@ -43,6 +42,5 @@ require plugin_dir_path( __FILE__ ) . 'includes/class-makae-gm.php';
 function run_makae_gm() {
   $plugin = new Makae_GM();
   $plugin->run();
-
 }
 run_makae_gm();
