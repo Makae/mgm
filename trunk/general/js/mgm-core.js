@@ -1,11 +1,12 @@
 /**
  * @author: M. Käser
- * @date: 29.11.2014
+ * @date: 24.12.2014
  * @desc: Core for the makae-googlemaps-plugin
  **/
 var mgm = typeof mgm != 'undefined' ? mgm : {};
 (function($) {
-  // Add it to the MGM-Library such that the map can be extended / changed at wish
+
+  // Add it to the MGM-object such that the map is publicly available
   mgm.MGM_Map = function(config) {
     this.config = config;
     this.gizmos = {};
@@ -127,21 +128,36 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     gizmo.unregister(this.map);
   };
 
-  mgm.MGM_Map.prototype.getGizmos = function(only_active, unregister) {
+  mgm.MGM_Map.prototype.getGizmos = function(unregister, only_active, extract_data) {
     var only_active = typeof only_active == 'undefined' ? true : false;
-    var unregister = typeof unregister == 'undefined' ? true : false;
+    var unregister = typeof unregister == 'undefined' ? false : true;
+    var extract_data = typeof extract_data == 'undefined' ? true : false;
 
-    if(!unregister && !only_active)
+    if(!unregister && !only_active && !extract_data)
       return this.gizmos;
 
-    var gizmos = [];
-    for(var i = 0; i < this.gizmos.length; i++) {
-      var gizmo = this.gizmos[i];
-      if(only_active && (gizmo.removed || gizmo.temporary))
-        continue;
-      if(unregister)
-        gizmo.unregister();
-      gizmos.pushd(gizmo);
+    var gizmos = {};
+    var data;
+    for(var gizmo_type in this.gizmos) {
+      for(var i = 0; i < this.gizmos[gizmo_type].length; i++) {
+        var gizmo = this.gizmos[gizmo_type][i];
+        if(only_active && (gizmo.removed || gizmo.temporary))
+          continue;
+
+        if(extract_data)
+          data = gizmo.getData();
+
+        if(unregister)
+          gizmo.unregister();
+
+        if(typeof gizmos[gizmo_type] == 'undefined')
+          gizmos[gizmo_type] = [];
+
+        if(extract_data)
+          gizmos[gizmo_type].push(data);
+        else
+          gizmos[gizmo_type].push(gizmo);
+      }
     }
     return gizmos;
   };
@@ -151,6 +167,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   var _mgm = {
+    initialized : false,
     config : {
       'map_selector' : '.mgm_map'
     },
@@ -186,22 +203,23 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       $(window).triggerHandler('mgm.loaded', {'mgm': mgm});
     },
     getMap : function(idx) {
-      if(idx >= this.map.length || idx < 0)
+      if(idx >= this.maps.length || idx < 0)
         return null;
       return this.maps[idx];
     },
     getMapData : function(idx) {
       var map = this.getMap(idx);
+
       if(map == null)
         return null;
-      var config = map.config;
-      map.gizmos =
-    },
-    getMap : function(idx) {
-      if(idx >= this.map.length || idx < 0)
-        return null;
-      return this.maps[idx];
-    };
+
+      var data = {
+        map : map.config,
+        gizmos : map.getGizmos(true)
+      };
+
+      return data;
+    }
   };
 
   mgm.builder = {
@@ -209,7 +227,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     builders : {
       marker: {
         standard : function(marker) {
-          var clickListenerHandler;
+          var clicklistener_handler;
+          var relevant_data = ['gizmo_type', 'type', 'lat', 'lng', 'content_provider'];
 
           marker.register = function(mgm_map) {
             marker.mgm_map = mgm_map;
@@ -219,19 +238,30 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             marker.gm_marker._registered = true;
             marker.gm_marker.setMap(mgm_map.map);
 
-            clickListenerHandler = google.maps.event.addListener(marker.gm_marker, 'click', function(e) {
+            clicklistener_handler = google.maps.event.addListener(marker.gm_marker, 'click', function(e) {
               marker.onClick(e, function(){});
             });
           };
 
           marker.unregister = function(mgm_map) {
-            clickListenerHandler.remove();
+            clicklistener_handler.remove();
             marker.gm_marker.setMap(null);
             delete marker.gm_marker;
+            delete marker.position;
+            delete marker.clickable;
+            delete marker.draggable;
+            delete marker.mgm_map;
+            delete marker.register;
+            delete marker.unregister;
+            delete marker.onClick;
           };
 
           marker.onClick = function(e, callback) {
             mgm.content_manager.callProvider(marker.content_provider, marker, callback);
+          };
+
+          marker.getData = function() {
+            return mgm.utils.extractData(marker, relevant_data);
           };
 
           return marker;
@@ -239,7 +269,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       },
       polygon: {
         standard : function(polygon) {
-          var clickListenerHandler;
+          var clicklistener_handler;
+          var relevant_data = ['gizmo_type', 'type', 'points'];
 
           polygon.register = function(mgm_map) {
             polygon.mgm_map = mgm_map;
@@ -251,19 +282,29 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             polygon.gm_polygon = new google.maps.Polygon(polygon);
             polygon.gm_polygon._registered = true;
             polygon.gm_polygon.setMap(mgm_map.map);
-            clickListenerHandler = google.maps.event.addListener(polygon.gm_polygon, 'click', function(e) {
+            clicklistener_handler = google.maps.event.addListener(polygon.gm_polygon, 'click', function(e) {
               polygon.onClick(e, function(){});
             });
           };
 
           polygon.unregister = function(mgm_map) {
-            clickListenerHandler.remove();
+            clicklistener_handler.remove();
             polygon.gm_polygon.setMap(null);
             delete polygon.gm_polygon;
+            delete polygon.mgm_map;
+            delete polygon.clickable;
+            delete polygon.draggable;
+            delete polygon.register;
+            delete polygon.unregister;
+            delete polygon.onClick;
           };
 
           polygon.onClick = function(e, callback) {
             mgm.content_manager.callProvider(polygon.content_provider, polygon, callback);
+          };
+
+          polygon.getData = function() {
+            return mgm.utils.extractData(polygon, relevant_data);
           };
 
           return polygon;
@@ -285,18 +326,18 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   mgm.content_manager = {
-    callProvider : function(key, marker, callback) {
+    callProvider : function(key, gizmo, callback) {
       if(typeof this.providers[key] != 'undefined')
-        this.providers[key](marker, callback);
+        this.providers[key](gizmo, callback);
       else
-        this.providers.standard(marker, callback);
+        this.providers.standard(gizmo, callback);
     },
     providers : {
-      standard : function(marker, callback) {
-        callback(marker.content_data)
+      standard : function(gizmo, callback) {
+        callback(gizmo.content_data)
       },
-      paragraph : function(marker, callback) {
-        callback(marker.content_data)
+      paragraph : function(gizmo, callback) {
+        callback(gizmo.content_data)
       },
       setProvider : function(key, call) {
         this[group][key] = call;
@@ -309,9 +350,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       return new google.maps.LatLng(config.lat, config.lng);
     },
 
-    rad : function(x) {
-      // @src: http://stackoverflow.com/a/1502821
-      return x * Math.PI / 180;
+    rad : function(deg) {
+      return deg * Math.PI / 180;
     },
 
     getDistance : function(p1, p2) {
@@ -325,14 +365,16 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       var d = R * c;
       return d; // returns the distance in meter
+    },
+
+    extractData : function(from, relevant_data) {
+      var data = {};
+      for(var i = 0; i < relevant_data.length; i++)
+        data[relevant_data[i]] = from[relevant_data[i]];
+      return data;
     }
   };
 
   $.extend(mgm, _mgm);
   mgm.init();
 })(jQuery);
-
-// The init method has to be executed as last thus enque with lowes priority possible (in an other file?)
-// jQuery(document).ready(function() {
-
-// });

@@ -67,15 +67,19 @@ class Makae_GM {
       'posts_per_page' => -1,
       'post_status' => 'publish'
     );
-
-    $map = Makae_GM_Utilities::get(
-      $map_meta['makae-gm-map'],
-      array(
+    // echo "<pre>";
+    // var_dump($map_meta['_mgm_map_data']);
+    // die();
+    if(isset($map_meta['_mgm_map_data'])) {
+      $map = json_decode(stripslashes($map_meta['_mgm_map_data']), true);
+    } else {
+      $map = array(
         'map' => $this->get_defaults('map-config'),
         'gizmos' => $this->get_defaults('map-gizmos'),
         'gizmo_defaults' => $this->get_defaults('gizmo_defaults')
-      )
-    );
+      );
+    }
+
     $map['id'] = $map_post->ID;
 
     return apply_filters('makae-gm-map-config', $map);
@@ -129,6 +133,7 @@ class Makae_GM {
 
     $this->loader->add_action('init', $plugin_admin, 'register_post_types');
     $this->loader->add_action('add_meta_boxes', $plugin_admin, 'add_meta_boxes');
+    $this->loader->add_action('save_post', $plugin_admin, 'save_meta_box');
 
     $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles');
     $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');

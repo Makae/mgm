@@ -111,6 +111,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         this.registerAdminHandlers(mgm.maps[i]);
       }
       this.initialized = true;
+
+      $(window).triggerHandler('mgm.admin.loaded', {'mgm': mgm});
     },
 
     initDrawingManager : function(map) {
@@ -575,12 +577,14 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     }
   };
 
-  if(mgm.initialized === true)
+
+
+
+  if(mgm.initialized !== true)
+    $(window).on('mgm.loaded', function() {
+      mgm.admin.init();
+    });
+  else
     mgm.admin.init();
 
-  $(window).on('mgm.loaded', function() {
-    mgm.admin.init();
-  });
-
-  $(window).triggerHandler('mgm.admin.loaded', {'mgm': mgm});
 })(jQuery);

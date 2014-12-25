@@ -45,10 +45,13 @@ class Makae_GM_Admin {
 
   public function render_meta_box($post) {
       wp_nonce_field('makae_map', 'makae_map_nonce');
+      echo '<input type="hidden" name="mgm_map_data" value="" />';
       $this->plugin_core->render_map($post->ID);
   }
 
   public function save_meta_box() {
+    global $post_id;
+
     if(!isset( $_POST['makae_map_nonce']))
       return;
 
@@ -66,13 +69,13 @@ class Makae_GM_Admin {
       if(!current_user_can('edit_post', $post_id))
         return;
 
-    if(!isset($_POST['map_data']))
+    if(!isset($_POST['mgm_map_data']))
       return;
 
-    $my_data = sanitize_text_field($_POST['map_data']);
+    $map_data = $_POST['mgm_map_data'];
 
     // Update Map data in map-post
-    //update_post_meta( $post_id, '_my_meta_value_key', $my_data );
+    update_post_meta($post_id, '_mgm_map_data', $map_data);
 
     // Create / Update gizmos relevant gizmo-posts
   }
