@@ -1,4 +1,18 @@
-/**
- * All of the CSS for your dashboard-specific functionality should be
- * included in this file.
- */
+
+ .mgm_edit_wrapper .latlng_field .lng_label {
+   margin-left: 14px;
+ }
+
+.mgm_edit_wrapper .latlng_field input {
+  margin-left: 7px;
+}
+
+.mgm_edit_wrapper .image-upload {
+  float: none;
+  margin-left: 14px;
+  margin-top: -5px;
+}
+
+ .mgm_edit_wrapper .overlay_row {
+   overflow: visible;
+ }

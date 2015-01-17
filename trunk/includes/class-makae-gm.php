@@ -73,10 +73,11 @@ class Makae_GM {
     if(isset($map_meta['_mgm_map_data'])) {
       $map = json_decode(stripslashes($map_meta['_mgm_map_data']), true);
     } else {
+      $map_config = $this->get_defaults('map-config');
+      $map_config['defaults'] = $this->get_defaults('defaults');
       $map = array(
-        'map' => $this->get_defaults('map-config'),
-        'gizmos' => $this->get_defaults('map-gizmos'),
-        'gizmo_defaults' => $this->get_defaults('gizmo_defaults')
+        'map' => $map_config,
+        'gizmos' => $this->get_defaults('map-gizmos')
       );
     }
 
@@ -180,17 +181,13 @@ class Makae_GM {
       break;
 
       case 'map-gizmos':
-        return apply_filters('makae-gm-map-gizmos-default', array('markers'=>array(), 'polygons'=>array()));
+        return apply_filters('makae-gm-map-gizmos-default', array('marker' => array(), 'polygon' => array()));
       break;
 
-      case 'gizmo-defaults':
-        $gizmos = $this->gizmo_factory->getClasses();
-        $gizmo_defaults = array();
-
-        foreach($gizmos as $gizmo)
-          $gizmo_defaults[$gizmo::getType()] = $gizmo::getDefaults();
-
-        return apply_filters('makae-gm-gizmo-defaults', $gizmo_defaults);
+      case 'defaults':
+        $marker = defined('MAKAE_GM_DEFAULTS_MARKER') ? unserialize(MAKAE_GM_DEFAULTS_MARKER) : array();
+        $polygon = defined('MAKAE_GM_DEFAULTS_POLYGON') ? unserialize(MAKAE_GM_DEFAULTS_POLYGON) : array();
+        return apply_filters('makae-gm-gizmo-defaults', array('marker' => $marker, 'polygon' => $polygon));
       break;
 
       default:

@@ -158,12 +158,16 @@ class Makae_GM_Admin {
   }
 
   public function enqueue_scripts() {
-    if(get_post_type() == 'makae-map')
+    if(get_post_type() == 'makae-map') {
+      // Is used for Map-upload
       wp_enqueue_media();
+    }
+
     wp_enqueue_script('makae-gm-admin', plugin_dir_url(__FILE__) . 'js/mgm-admin.js', array('makae-gm-core'), $this->version, true);
     wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/makae-gm-admin.js', array('makae-gm-admin'), $this->version, true);
     wp_enqueue_script($this->plugin_name . '_gizmos', plugin_dir_url(__FILE__) . 'js/mgm-gizmos.js', array($this->plugin_name), $this->version, true);
     wp_enqueue_script($this->plugin_name . '_content', plugin_dir_url(__FILE__) . 'js/mgm-content.js', array($this->plugin_name), $this->version, true);
+    wp_enqueue_script($this->plugin_name . '_init', Makae_GM_Utilities::pluginURL(__FILE__, 'general/js/mgm-init.js'), array($this->plugin_name . '_gizmos', $this->plugin_name . '_content'), $this->version, true);
   }
 
 }

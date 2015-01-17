@@ -77,24 +77,28 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       name : 'edit',
       clickhandler : null,
       enter : function(sm) {
-        $(sm.map.map_root).addClass("mode-marker");
-        $(sm.map.map_root).find(".mgm_toolbar .edit_gizmo").addClass("active");
+        $(sm.map.map_root).addClass('mode-marker');
+        $(sm.map.map_root).find(".mgm_toolbar .edit_gizmo").addClass('active');
 
         sm.map.map.setOptions({draggableCursor: 'pointer'});
         sm.map.dm.setMap(null);
 
-        for(var i in sm.map.polygons)
-          sm.map.polygons[i].gm_polygon.setEditable(true);
+        for(var i in sm.map.gizmos)
+          for(var n in sm.map.gizmos[i])
+            if(typeof sm.map.gizmos[i][n]._setEditable == 'function')
+              sm.map.gizmos[i][n]._setEditable(true);
       },
       exit : function(sm) {
-        $(sm.map.map_root).removeClass("mode-marker");
-        $(sm.map.map_root).find(".mgm_toolbar .edit_gizmo").removeClass("active");
+        $(sm.map.map_root).removeClass('mode-marker');
+        $(sm.map.map_root).find('.mgm_toolbar .edit_gizmo').removeClass('active');
 
         sm.map.map.setOptions({draggableCursor: 'default'});
         sm.map.dm.setMap(sm.map.map);
 
-        for(var i in sm.map.polygons)
-          sm.map.polygons[i].gm_polygon.setEditable(false);
+        for(var i in sm.map.gizmos)
+          for(var n in sm.map.gizmos[i])
+            if(typeof sm.map.gizmos[i][n]._setEditable == 'function')
+              sm.map.gizmos[i][n]._setEditable(false);
       }
     }
   };
@@ -111,12 +115,12 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         this.registerAdminHandlers(mgm.maps[i]);
       }
       this.initialized = true;
-
-      $(window).triggerHandler('mgm.admin.loaded', {'mgm': mgm});
+      console.log("MGM Admin initialized");
+      $(window).triggerHandler('mgm.admin.initialized', {'mgm': mgm});
     },
 
     initDrawingManager : function(map) {
-      map.dm = new google.maps.drawing.DrawingManager({
+      var config = {
         drawingMode: google.maps.drawing.OverlayType.MARKER,
         drawingControl: true,
         drawingControlOptions: {
@@ -124,9 +128,13 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           drawingModes: [
             google.maps.drawing.OverlayType.MARKER,
             google.maps.drawing.OverlayType.POLYGON
-          ]
-        }
-      });
+          ],
+        },
+        markerOptions: map.getDefaults('marker'),
+        polygonOptions: map.getDefaults('polygon')
+      };
+
+      map.dm = new google.maps.drawing.DrawingManager(config);
 
       map.dm.setMap(map.map);
 
@@ -167,6 +175,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         var $form = $(this).closest('.mgm_form');
 
         mgm.form_provider.getProvider(gizmo.gizmo_type, gizmo.type).update(gizmo, $form);
+        mgm.content_form_provider.getProvider('general_fields', 'standard').update(gizmo, $form);
         mgm.content_form_provider.getProvider(gizmo.content_provider).update(gizmo, $form);
 
         self.hideEdit(map);
@@ -194,7 +203,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         self.showMapEdit(map);
       });
 
-      state_machine.switchState(state_machine.STD_STATE);
+      state_machine.switchState(state_machine.EDIT_STATE);
       map.sm = state_machine;
     },
 
@@ -212,6 +221,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       $(map.map_root).find('.gizmo_form').show();
       this.current_gizmo = gizmo;
       this.loadFields(map, gizmo);
+    },
+
+    updateFormProvider : function(map, provider) {
+
     },
 
     hideEdit : function(map, time) {
@@ -240,22 +253,40 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     loadFields : function(map, gizmo) {
       $(map.map_root).find('.mgm_edit_wrapper').delay(200).slideDown(200);
 
-      this.loadGenericFields(map, gizmo);
-      this.loadSpecificFields(map, gizmo);
+      this.loadGeneralFields(map, gizmo);
+      this.loadContentProviderFields(map, gizmo);
     },
 
-    loadGenericFields : function(map, gizmo) {
+     /**
+     * Loads the general fields which are the same on differen gizmos
+     *
+     * There are 2 types
+     * General gizmo fields -> the same fields for the same gizmo types
+     * General fields -> the same for all types
+     *
+     */
+    loadGeneralFields : function(map, gizmo) {
       // Load generic fields which are the same each time
       var $generic = $(map.map_root).find('.mgm_edit_wrapper').find('.generic');
 
-      var loadGeneric = function(data) {
-        $generic.html(data);
+      // Fields which are the same for all gizmo of same type
+      var loadGeneralGizmoFields = function(data) {
+        $generic.append($(data));
       };
 
-      mgm.form_provider.renderProvider(gizmo.gizmo_type, gizmo.type, gizmo, loadGeneric);
+      // Fields like name and content-provider selection are used of all gizmos no mater the type
+      var loadGeneralFields = function(data) {
+        $generic.html(data);
+        mgm.form_provider.renderProvider(gizmo.gizmo_type, gizmo.type, gizmo, loadGeneralGizmoFields);
+      }
+
+        mgm.form_provider.renderProvider('general_fields', 'standard', gizmo, loadGeneralFields);
     },
 
-    loadSpecificFields : function(map, gizmo) {
+    /**
+     * Loads the content provider fields based on the gizmo's content_provider property
+     */
+    loadContentProviderFields : function(map, gizmo) {
       // Load content specific fields
       var $specific = $(map.map_root).find('.mgm_edit_wrapper').find('.specific');
 
@@ -292,42 +323,66 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       map : {
         standard : {
           html :'<div class="col col_6_12 left">' +
-                '<div class="row">' +
-                  '<label for="map_name" class="col col_3_12">Name:</label>' +
-                  '<input type="text" name="map_name" class="col col_9_12" />' +
-                '</div>' +
+                // '<div class="row">' +
+                //   '<label for="map_name" class="col col_3_12">Name:</label>' +
+                //   '<input type="text" name="map_name" class="col col_9_12" />' +
+                // '</div>' +
                 '<div class="row mgm_position">' +
                   '<span class="col col_3_12 label">Position:</span>' +
-                  '<div class="col col_9_12 no-padding">' +
-                    '<label for="map_lat" class="">Lat:</label>' +
-                    '<input type="number" name="map_lat" class="" min="-90" max="90" step="0.000001" />' +
-                    '<label for="map_lng" class="">Lng:</label>' +
-                    '<input type="number" name="map_lng" class="" min="-180" max="180" step="0.000001" />' +
+                  '<div class="col col_9_12 no-padding latlng_field">' +
+                    '<label for="map_lat" class="col col_1_12 lat_label">Lat:</label>' +
+                    '<input type="number" name="map_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<label for="map_lng" class="col col_1_12 lng_label">Lng:</label>' +
+                    '<input type="number" name="map_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
+                  '</div>' +
+                '</div>' +
+                '<div class="row viewport_row">' +
+                  '<h5 class="col col_12_12 label">Viewport Restrictions:</h5>' +
+                '</div>' +
+                '<div class="row">' +
+                  '<span class="col col_3_12 label">Bottom-Left:</span>' +
+                  '<div class="col col_9_12 no-padding latlng_field">' +
+                    '<label for="viewport_tr_lat" class="col col_1_12 lat_label">Lat:</label>' +
+                    '<input type="number" name="viewport_bl_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<label for="viewport_tr_lng" class="col col_1_12 lng_label">Lng:</label>' +
+                    '<input type="number" name="viewport_bl_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
+                  '</div>' +
+                '</div>' +
+                '<div class="row">' +
+                  '<span class="col col_3_12 label">Top-Right:</span>' +
+                  '<div class="col col_9_12 no-padding latlng_field">' +
+                    '<label for="viewport_bl_lat" class="col col_1_12 lat_label">Lat:</label>' +
+                    '<input type="number" name="viewport_tr_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<label for="viewport_bl_lng" class="col col_1_12 lng_label">Lng:</label>' +
+                    '<input type="number" name="viewport_tr_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
                   '</div>' +
                 '</div>' +
               '</div>' +
               '<div class="col col_6_12 right">' +
+                '<div class="row viewport_row">' +
+                  '<h5 class="col col_12_12 label">Overlay:</h5>' +
+                '</div>' +
                 '<div class="row overlay_row">' +
-                  '<label for="overlay_image" class="col col_3_12">Overlay:</label>' +
-                  '<input type="text" name="overlay_image" class="col col_6_12 image-value" />' +
-                  '<button class="button button-primary image-upload col col_3_12" name="overlay_image">Set Image</button>' +
+                  '<label for="overlay_image" class="col col_3_12">Image:</label>' +
+                  '<input type="text" name="overlay_image" class="col col_5_12 image-value" />' +
+                  '<button class="button button-primary image-upload col col_3_12" name="overlay_image">Upload</button>' +
                 '</div>' +
                 '<div class="row">' +
-                  '<span class="col col_3_12 label">Left-Top Corner:</span>' +
-                  '<div class="col col_9_12 no-padding">' +
-                    '<label for="overlay_tl_lat" class="">Lat:</label>' +
-                    '<input type="number" name="overlay_tl_lat" class="" min="-90" max="90" step="0.000001" />' +
-                    '<label for="overlay_tl_lng" class="">Lng:</label>' +
-                    '<input type="number" name="overlay_tl_lng" class="" min="-180" max="180" step="0.000001" />' +
+                  '<span class="col col_3_12 label">Bottom-Left:</span>' +
+                  '<div class="col col_9_12 no-padding latlng_field">' +
+                    '<label for="overlay_tr_lat" class="col col_1_12 lat_label">Lat:</label>' +
+                    '<input type="number" name="overlay_bl_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<label for="overlay_tr_lng" class="col col_1_12 lng_label">Lng:</label>' +
+                    '<input type="number" name="overlay_bl_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
                   '</div>' +
                 '</div>' +
                 '<div class="row">' +
-                  '<span class="col col_3_12 label">Bottom-Right Corner:</span>' +
-                  '<div class="col col_9_12 no-padding">' +
-                    '<label for="overlay_br_lat" class="">Lat:</label>' +
-                    '<input type="number" name="overlay_br_lat" class="" min="-90" max="90" step="0.000001" />' +
-                    '<label for="overlay_br_lng" class="">Lng:</label>' +
-                    '<input type="number" name="overlay_br_lng" class="" min="-180" max="180" step="0.000001" />' +
+                  '<span class="col col_3_12 label">Top-Right:</span>' +
+                  '<div class="col col_9_12 no-padding latlng_field">' +
+                    '<label for="overlay_bl_lat" class="col col_1_12 lat_label">Lat:</label>' +
+                    '<input type="number" name="overlay_tr_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<label for="overlay_bl_lng" class="col col_1_12 lng_label">Lng:</label>' +
+                    '<input type="number" name="overlay_tr_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
                   '</div>' +
                 '</div>' +
               '</div>',
@@ -347,14 +402,14 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                 $html.find('input[name="overlay_image"]').val(overlay_config.image);
               }
 
-              if(typeof overlay_config.top_left_coords != 'undefined') {
-                $html.find('input[name="overlay_tl_lat"]').val(overlay_config.top_left_coords.lat);
-                $html.find('input[name="overlay_tl_lng"]').val(overlay_config.top_left_coords.lng);
+              if(typeof overlay_config.top_right_coords != 'undefined') {
+                $html.find('input[name="overlay_tr_lat"]').val(overlay_config.top_right_coords.lat);
+                $html.find('input[name="overlay_tr_lng"]').val(overlay_config.top_right_coords.lng);
               }
 
-              if(typeof overlay_config.bottom_right_coords != 'undefined') {
-                $html.find('input[name="overlay_br_lat"]').val(overlay_config.bottom_right_coords.lat);
-                $html.find('input[name="overlay_br_lng"]').val(overlay_config.bottom_right_coords.lng);
+              if(typeof overlay_config.bottom_left_coords != 'undefined') {
+                $html.find('input[name="overlay_bl_lat"]').val(overlay_config.bottom_left_coords.lat);
+                $html.find('input[name="overlay_bl_lng"]').val(overlay_config.bottom_left_coords.lng);
               }
             }
 
@@ -375,13 +430,13 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             if(typeof map.config.overlay != 'undefined')
               var overlay_config = map.config.overlay;
             else
-              var overlay_config = {'image':'', 'top_left_coords': {}, 'bottom_right_coords': {}};
+              var overlay_config = {'image':'', 'top_right_coords': {}, 'bottom_left_coords': {}};
 
             overlay_config.image = $form.find('input[name="overlay_image"]').val();
-            overlay_config.top_left_coords.lat = $form.find('input[name="overlay_tl_lat"]').val();
-            overlay_config.top_left_coords.lng = $form.find('input[name="overlay_tl_lng"]').val();
-            overlay_config.bottom_right_coords.lat = $form.find('input[name="overlay_br_lat"]').val();
-            overlay_config.bottom_right_coords.lng = $form.find('input[name="overlay_br_lng"]').val();
+            overlay_config.top_right_coords.lat = $form.find('input[name="overlay_tr_lat"]').val();
+            overlay_config.top_right_coords.lng = $form.find('input[name="overlay_tr_lng"]').val();
+            overlay_config.bottom_left_coords.lat = $form.find('input[name="overlay_bl_lat"]').val();
+            overlay_config.bottom_left_coords.lng = $form.find('input[name="overlay_bl_lng"]').val();
 
             map.setOverlay(overlay_config);
           },
@@ -392,26 +447,87 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         }
       },
 
-      marker : {
+      general_fields : {
         standard : {
           html : '<div class="row">' +
-                '<label for="gizmo_name" class="col col_3_12">Name:</label>' +
-                '<input type="text" name="gizmo_name" class="col col_9_12" />' +
-              '</div>' +
-              '<div class="row mgm_position">' +
-                '<span class="col col_3_12 label">Position:</span>' +
-                '<div class="col col_9_12 no-padding">' +
-                  '<label for="gizmo_lat" class="">Lat:</label>' +
-                  '<input type="number" name="gizmo_lat" class="" min="-90" max="90" step="0.000001" />' +
-                  '<label for="gizmo_lng" class="">Lng:</label>' +
-                  '<input type="number" name="gizmo_lng" class="" min="-180" max="180" step="0.000001" />' +
+                  '<label for="gizmo_name" class="col col_3_12">Name:</label>' +
+                  '<input type="text" name="gizmo_name" class="col col_9_12" />' +
                 '</div>' +
-              '</div>',
+                '<div class="row">' +
+                  '<label for="content_provider" class="col col_3_12">Type</label>' +
+                  '<select name="content_provider" class="col col_9_12"></select>' +
+                '</div>',
+
+          render : function(gizmo, callback) {
+            var self = this;
+            $html = $(this.html);
+            var select = this.getContentProviderHTML(gizmo);
+            $html.find('select[name="content_provider"]').append($(select));
+            $html.find('input[name="gizmo_name"]').val(gizmo.name);
+
+            $html.find('select[name="content_provider"]').change(function() {
+              self.update(gizmo, $(this).closest('.mgm_form'));
+              mgm.admin.loadContentProviderFields(gizmo.mgm_map, gizmo);
+            });
+
+            callback($html);
+          },
+
+          getContentProviderHTML : function(gizmo) {
+            var providers = mgm.content_form_provider.getProviderNames();
+            var html = '';
+            for(var i in providers) {
+              var provider = providers[i];
+              var selected = provider == gizmo.content_provider ? ' selected="selected" ' : '';
+              html += '<option value="' + provider + '" ' + selected +'>' + provider + '</option>\n';
+            }
+            return html;
+          },
+
+          update : function(gizmo, form) {
+            var $form = $(form),
+                content_provider = $form.find('select[name="content_provider"]').val(),
+                content_data;
+
+            gizmo.name = $form.find('input[name="gizmo_name"]').val();
+
+            var field_provider = mgm.content_form_provider.getProvider(gizmo.content_provider);
+
+            if(typeof gizmo.temporary_content_data == 'undefined')
+              gizmo.temporary_content_data = {};
+
+            gizmo.temporary_content_data[gizmo.content_provider] = field_provider.form_data(gizmo, form);
+
+            if(typeof gizmo.temporary_content_data[content_provider] != 'undefined')
+              content_data = gizmo.temporary_content_data[content_provider];
+            else
+              content_data = gizmo.content_data;
+
+            gizmo.content_data = content_data;
+            gizmo.content_provider = content_provider
+          },
+
+          save : function(gizmo, form) {
+            this.update();
+          }
+        }
+      },
+
+      marker : {
+        standard : {
+          html : '<div class="row mgm_position">' +
+                    '<span class="col col_3_12 label">Position:</span>' +
+                    '<div class="col col_9_12 no-padding latlng_field">' +
+                      '<label for="gizmo_lat" class="col col_1_12 lat_label">Lat:</label>' +
+                      '<input type="number" name="gizmo_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                      '<label for="gizmo_lng" class="col col_1_12 lng_label">Lng:</label>' +
+                      '<input type="number" name="gizmo_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
+                    '</div>' +
+                  '</div>',
 
           render : function(marker, callback) {
             var self = this;
             $html = $(this.html);
-
             $html.find('input[name="gizmo_name"]').val(marker.name);
             $html.find('input[name="gizmo_lat"]').val(marker.lat);
             $html.find('input[name="gizmo_lng"]').val(marker.lng);
@@ -472,11 +588,13 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           },
 
           refreshBinded : function(gizmo) {
-            gizmo.gm_polygon.strokeColor = gizmo.strokeColor;
-            gizmo.gm_polygon.strokeOpacity = gizmo.strokeOpacity;
-            gizmo.gm_polygon.strokeWeight = gizmo.strokeWeight;
-            gizmo.gm_polygon.fillColor = gizmo.fillColor;
-            gizmo.gm_polygon.fillOpacity = gizmo.fillOpacity;
+            gizmo.gm_polygon.setOptions({
+              strokeColor: gizmo.strokeColor,
+              strokeOpacity: gizmo.strokeOpacity,
+              strokeWeight: gizmo.strokeWeight,
+              fillColor: gizmo.fillColor,
+              fillOpacity: gizmo.fillOpacity
+            });
           },
 
           save : function(marker, form) {
@@ -499,6 +617,14 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       this.providers[provider_key] = provider;
     },
 
+    getProviderNames : function(std_inclusive) {
+      var std_inclusive = std_inclusive || true;
+      var providers = [];
+      for(var i in this.providers)
+        providers.push(i);
+      return providers;
+    },
+
     getProvider : function(provider_key) {
       if(typeof this.providers[provider_key] != 'undefined')
         return this.providers[provider_key];
@@ -513,6 +639,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           callback(this.html);
         },
 
+        form_data : function(gizmo, form) {
+          return '';
+        },
+
         update : function(gizmo, form) {
           return;
         },
@@ -524,6 +654,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     }
   };
 
+  /**
+   * Extractors are used for extracting google maps data.
+   * The data is then represented for hanlding in our mgm format
+   */
   mgm.map_extractor = {
     std_key: 'standard',
     map_extractors: {
@@ -576,15 +710,5 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       return Math.round(Math.pow(10, mgm.admin.config.ll_dec_points) * coord_segment) / Math.pow(10, mgm.admin.config.ll_dec_points);
     }
   };
-
-
-
-
-  if(mgm.initialized !== true)
-    $(window).on('mgm.loaded', function() {
-      mgm.admin.init();
-    });
-  else
-    mgm.admin.init();
-
+  $(window).triggerHandler('mgm.admin.loaded', {'mgm': mgm});
 })(jQuery);

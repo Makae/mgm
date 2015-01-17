@@ -1,7 +1,8 @@
 /**
+ * Core for the makae-googlemaps-plugin
+ *
  * @author: M. Käser
  * @date: 24.12.2014
- * @desc: Core for the makae-googlemaps-plugin
  **/
 var mgm = typeof mgm != 'undefined' ? mgm : {};
 (function($) {
@@ -9,6 +10,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   // Add it to the MGM-object such that the map is publicly available
   mgm.MGM_Map = function(config) {
     this.config = config;
+
     this.gizmos = {};
     this.gizmo_counter = 0;
     this.map_dom = null;
@@ -33,14 +35,29 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       this.setBounds(this.config.bounds);
   };
 
+  mgm.MGM_Map.prototype.getDefaults = function(defaults_key) {
+    if(typeof this.config.defaults == 'undefined' || typeof this.config.defaults[defaults_key] == 'undefined')
+      return {};
+
+    return this.config.defaults[defaults_key];
+  }
+
+  mgm.MGM_Map.prototype.loadDefaults = function(object, defaults_key) {
+    var default_values = this.getDefaults(defaults_key);
+    for(var i in default_values)
+      if(typeof object[i] == 'undefined' && (typeof object[i] == 'undefined' || object[i] == null))
+        object[i] = default_values[i];
+
+    return object;
+  };
+
   // Took from: http://stackoverflow.com/questions/3125065/how-do-i-limit-panning-in-google-maps-api-v3?answertab=active#tab-top
   mgm.MGM_Map.prototype.setBounds = function(bounds) {
     if(typeof bounds.position != 'undefined') {
       var position_bounds = bounds.position;
       var allowedBounds = new google.maps.LatLngBounds(
-        mgm.utils.latLngToPos(position_bounds.top_left_coords),
-        mgm.utils.latLngToPos(position_bounds.bottom_right_coords)
-      );
+        mgm.utils.latLngToPos(config.bottom_left_coords),
+        mgm.utils.latLngToPos(config.top_right_coords));
 
       // Listen for the dragend event
       google.maps.event.addListener(self.map, 'dragend', function() {
@@ -84,15 +101,21 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     this.config.bounds = bounds;
   };
 
+  /**
+   * Adds an overlay if it is defined in the config
+   *
+   * @todo Switch from Groundoverlay to CustomOverlay and provide
+   *       dragging and resizing capabilities
+   *       More Infos: https://developers.google.com/maps/documentation/javascript/customoverlays
+   */
   mgm.MGM_Map.prototype.setOverlay = function(config) {
     if(typeof this.overlay != 'undefined')
       this.overlay.setMap(null);
 
-    var bounds = new google.maps.LatLngBounds(mgm.utils.latLngToPos(config.top_left_coords),
-                                              mgm.utils.latLngToPos(config.bottom_right_coords));
+    var bounds = new google.maps.LatLngBounds(mgm.utils.latLngToPos(config.bottom_left_coords),
+                                              mgm.utils.latLngToPos(config.top_right_coords));
     this.overlay = new google.maps.GroundOverlay(config.image, bounds);
     this.overlay.setMap(this.map);
-
     this.config.overlay = config;
   };
 
@@ -107,6 +130,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     else
       builder = gizmo['builder'];
 
+    gizmo = this.loadDefaults(gizmo, gizmo.gizmo_type);
     gizmo = builder(gizmo);
 
     gizmo.register(this);
@@ -177,7 +201,6 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
       $(this.config.map_selector).each(function() {
         var config = JSON.parse($(this).attr('data-map'));
-
         var map = new mgm.MGM_Map(config.map);
 
         map.init(this);
@@ -200,6 +223,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       });
 
       this.initialized = true;
+      console.log("MGM Core initialized");
       $(window).triggerHandler('mgm.loaded', {'mgm': mgm});
     },
     getMap : function(idx) {
@@ -228,7 +252,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       marker: {
         standard : function(marker) {
           var clicklistener_handler;
-          var relevant_data = ['gizmo_type', 'type', 'lat', 'lng', 'content_provider'];
+          var relevant_data = ['gizmo_type', 'type', 'name', 'lat', 'lng', 'content_provider', 'content_data', 'icon'];
 
           marker.register = function(mgm_map) {
             marker.mgm_map = mgm_map;
@@ -261,16 +285,17 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           };
 
           marker.getData = function() {
-            return mgm.utils.extractData(marker, relevant_data);
+            return mgm.utils.extractGizmoData(marker, relevant_data);
           };
 
           return marker;
         }
       },
+
       polygon: {
         standard : function(polygon) {
           var clicklistener_handler;
-          var relevant_data = ['gizmo_type', 'type', 'points'];
+          var relevant_data = ['gizmo_type', 'type', 'name', 'points', 'content_provider', 'content_data', 'strokeColor','strokeOpacity','strokeWeight','fillColor','fillOpacity'];
 
           polygon.register = function(mgm_map) {
             polygon.mgm_map = mgm_map;
@@ -304,7 +329,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           };
 
           polygon.getData = function() {
-            return mgm.utils.extractData(polygon, relevant_data);
+            return mgm.utils.extractGizmoData(polygon, relevant_data);
           };
 
           return polygon;
@@ -367,6 +392,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       return d; // returns the distance in meter
     },
 
+    extractGizmoData : function(from, relevant_data) {
+      var data = this.extractData(from, relevant_data);
+      return data;
+    },
+
     extractData : function(from, relevant_data) {
       var data = {};
       for(var i = 0; i < relevant_data.length; i++)
@@ -376,5 +406,5 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   $.extend(mgm, _mgm);
-  mgm.init();
 })(jQuery);
+console.log("MGM Core loaded");

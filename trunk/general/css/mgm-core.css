@@ -54,6 +54,12 @@ body, html {
   padding: 0 14px;
 }
 
+textarea.col,
+select.col {
+  margin: 0;
+  padding: 0;
+}
+
 .col.no-padding {
   padding: 0;
 }
@@ -128,13 +134,13 @@ body, html {
 /*********************
  *      ADMIN        *
  *********************/
- .mgm_wrapper {
-   -webkit-transition:filter 400ms ease-in-out, -webkit-filter 400ms ease-in-out, -moz-filter 400ms ease-in-out, -o-filter 400ms ease-in-out;
+.mgm_wrapper {
+  -webkit-transition:filter 400ms ease-in-out, -webkit-filter 400ms ease-in-out, -moz-filter 400ms ease-in-out, -o-filter 400ms ease-in-out;
   -moz-transition:filter 400ms ease-in-out, -webkit-filter 400ms ease-in-out, -moz-filter 400ms ease-in-out, -o-filter 400ms ease-in-out;
   -ms-transition:filter 400ms ease-in-out, -webkit-filter 400ms ease-in-out, -moz-filter 400ms ease-in-out, -o-filter 400ms ease-in-out;
   -o-transition:filter 400ms ease-in-out, -webkit-filter 400ms ease-in-out, -moz-filter 400ms ease-in-out, -o-filter 400ms ease-in-out;
   transition:filter 400ms ease-in-out, -webkit-filter 400ms ease-in-out, -moz-filter 400ms ease-in-out, -o-filter 400ms ease-in-out;
- }
+}
 
 .mgm_wrapper.edit .mgm_map {
   -webkit-filter: blur(3px);
@@ -173,7 +179,7 @@ body, html {
   background-image: url('../images/icons-sprite.png');
   background-repeat: none;
   background-color: transparent;
-  background-size: 160px 160px;
+  background-size:320px 80px;
 
   list-style-type: none;
   cursor: pointer;
@@ -286,6 +292,9 @@ body, html {
   display: inline-block;
 }
 
+.mgm_edit textarea {
+  max-width: 100%;
+}
 
 /*
  * ANIMATIONS
