@@ -203,16 +203,27 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         self.showMapEdit(map);
       });
 
+      $(map.map_root).find('.mgm_toolbar .map_config').click(function() {
+        self.showConfigEdit(map);
+      });
+
       state_machine.switchState(state_machine.EDIT_STATE);
       map.sm = state_machine;
     },
 
     showMapEdit : function(map) {
       this.hideEdit(map);
-      $(map.map_root).addClass("edit");
+      $(map.map_root).addClass('edit');
       $(map.map_root).find('.map_form').show();
       $(map.map_root).find('.mgm_edit_wrapper').delay(200).slideDown(200);
       this.loadMapFields(map);
+    },
+
+    showConfigEdit : function(map) {
+      this.hideEdit(map);
+      $(map.map_root).addClass('edit');
+      $(map.map_root).find('.config_form').show();
+      this.loadConfigFields(map);
     },
 
     showEditGizmo : function(map, gizmo) {
@@ -221,10 +232,6 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       $(map.map_root).find('.gizmo_form').show();
       this.current_gizmo = gizmo;
       this.loadFields(map, gizmo);
-    },
-
-    updateFormProvider : function(map, provider) {
-
     },
 
     hideEdit : function(map, time) {
@@ -248,6 +255,19 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       };
 
       mgm.form_provider.renderProvider('map', map.config.type, map, loadMap);
+    },
+
+
+    loadConfigFields : function(map) {
+      $(map.map_root).find('.mgm_edit_wrapper').delay(200).slideDown(200);
+      // Load generic fields which are the same each time
+      var $form = $(map.map_root).find('.mgm_edit_wrapper .config_form_content');
+
+      var loadConfig = function(data) {
+        $form.html(data);
+      };
+
+      mgm.form_provider.renderProvider('config', map.config.type, map, loadConfig);
     },
 
     loadFields : function(map, gizmo) {
@@ -323,10 +343,6 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       map : {
         standard : {
           html :'<div class="col col_6_12 left">' +
-                // '<div class="row">' +
-                //   '<label for="map_name" class="col col_3_12">Name:</label>' +
-                //   '<input type="text" name="map_name" class="col col_9_12" />' +
-                // '</div>' +
                 '<div class="row mgm_position">' +
                   '<span class="col col_3_12 label">Position:</span>' +
                   '<div class="col col_9_12 no-padding latlng_field">' +
@@ -362,7 +378,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                 '<div class="row viewport_row">' +
                   '<h5 class="col col_12_12 label">Overlay:</h5>' +
                 '</div>' +
-                '<div class="row overlay_row">' +
+                '<div class="row overlay_row icon_row">' +
                   '<label for="overlay_image" class="col col_3_12">Image:</label>' +
                   '<input type="text" name="overlay_image" class="col col_5_12 image-value" />' +
                   '<button class="button button-primary image-upload col col_3_12" name="overlay_image">Upload</button>' +
@@ -447,16 +463,114 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         }
       },
 
+      config : {
+        standard : {
+          html :'<div class="col col_6_12 right">' +
+                  '<div class="row">' +
+                    '<h5 class="col col_12_12 label">Polygon defaults:</h5>' +
+                    '<div class="row">' +
+                      '<label for="gizmo_name" class="col col_3_12">Name:</label>' +
+                      '<input type="text" name="gizmo_name" class="col col_9_12" />' +
+                    '</div>' +
+                    '<div class="row mgm_stroke_color">' +
+                      '<label for="gizmo_stroke_color" class="col col_3_12">Stroke color:</label>' +
+                      '<input type="text" name="gizmo_stroke_color" class="col col_9_12" />' +
+                    '</div>' +
+                    '<div class="row mgm_stroke_opacity">' +
+                      '<label for="gizmo_stroke_opacity" class="col col_3_12">Stroke opacity:</label>' +
+                      '<input type="range" name="gizmo_stroke_opacity" class="col col_9_12" min="0.0" max="1.0" step="0.01" />' +
+                    '</div>' +
+                    '<div class="row mgm_stroke_width">' +
+                      '<label for="gizmo_stroke_width" class="col col_3_12">Stroke width:</label>' +
+                      '<input type="text" name="gizmo_stroke_width" class="col col_9_12" />' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="col col_6_12 left">' +
+                  '<div class="row mgm_position">' +
+                    '<div class="row">' +
+                      '<h5 class="col col_12_12 label">Marker defaults:</h5>' +
+                      '<div class="col col_9_12">' +
+                        '<div class="row icon_row">' +
+                          '<label for="marker_icon" class="col col_3_12">Icon:</label>' +
+                          '<input type="text" name="marker_icon" class="col col_5_12 image-value" />' +
+                          '<button class="button button-primary image-upload col col_3_12" name="marker_icon">Upload</button>' +
+                        '</div>' +
+                      '</div>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>',
+
+          render : function(map, callback) {
+            var self = this;
+            $html = $(this.html);
+
+            $html.find('input[name="map_name"]').val(map.config.name);
+            $html.find('input[name="map_lat"]').val(map.config.lat);
+            $html.find('input[name="map_lng"]').val(map.config.lng);
+
+
+            var overlay_config = map.config.overlay;
+            if(typeof overlay_config != 'undefined') {
+              if(typeof overlay_config.image != 'undefined') {
+                $html.find('input[name="overlay_image"]').val(overlay_config.image);
+              }
+
+              if(typeof overlay_config.top_right_coords != 'undefined') {
+                $html.find('input[name="overlay_tr_lat"]').val(overlay_config.top_right_coords.lat);
+                $html.find('input[name="overlay_tr_lng"]').val(overlay_config.top_right_coords.lng);
+              }
+
+              if(typeof overlay_config.bottom_left_coords != 'undefined') {
+                $html.find('input[name="overlay_bl_lat"]').val(overlay_config.bottom_left_coords.lat);
+                $html.find('input[name="overlay_bl_lng"]').val(overlay_config.bottom_left_coords.lng);
+              }
+            }
+
+            mgm.wp_admin.customImageUpload($html.find(".overlay_row"));
+
+            callback($html);
+          },
+
+          update : function(map, form) {
+            $form = $(form);
+
+            // MAP
+            map.config.name = $form.find('input[name="map_name"]').val();
+            map.config.lat = $form.find('input[name="map_lat"]').val();
+            map.config.lng = $form.find('input[name="map_lng"]').val();
+
+            // OVERLAY
+            if(typeof map.config.overlay != 'undefined')
+              var overlay_config = map.config.overlay;
+            else
+              var overlay_config = {'image':'', 'top_right_coords': {}, 'bottom_left_coords': {}};
+
+            overlay_config.image = $form.find('input[name="overlay_image"]').val();
+            overlay_config.top_right_coords.lat = $form.find('input[name="overlay_tr_lat"]').val();
+            overlay_config.top_right_coords.lng = $form.find('input[name="overlay_tr_lng"]').val();
+            overlay_config.bottom_left_coords.lat = $form.find('input[name="overlay_bl_lat"]').val();
+            overlay_config.bottom_left_coords.lng = $form.find('input[name="overlay_bl_lng"]').val();
+
+            map.setOverlay(overlay_config);
+          },
+
+          save : function(marker, form) {
+            this.update();
+          }
+        }
+      },
+
       general_fields : {
         standard : {
           html : '<div class="row">' +
-                  '<label for="gizmo_name" class="col col_3_12">Name:</label>' +
-                  '<input type="text" name="gizmo_name" class="col col_9_12" />' +
-                '</div>' +
-                '<div class="row">' +
-                  '<label for="content_provider" class="col col_3_12">Type</label>' +
-                  '<select name="content_provider" class="col col_9_12"></select>' +
-                '</div>',
+                   '<label for="gizmo_name" class="col col_3_12">Name:</label>' +
+                   '<input type="text" name="gizmo_name" class="col col_9_12" />' +
+                 '</div>' +
+                 '<div class="row">' +
+                   '<label for="content_provider" class="col col_3_12">Type</label>' +
+                   '<select name="content_provider" class="col col_9_12"></select>' +
+                 '</div>',
 
           render : function(gizmo, callback) {
             var self = this;
@@ -516,12 +630,13 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       marker : {
         standard : {
           html : '<div class="row mgm_position">' +
-                    '<span class="col col_3_12 label">Position:</span>' +
-                    '<div class="col col_9_12 no-padding latlng_field">' +
-                      '<label for="gizmo_lat" class="col col_1_12 lat_label">Lat:</label>' +
-                      '<input type="number" name="gizmo_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
-                      '<label for="gizmo_lng" class="col col_1_12 lng_label">Lng:</label>' +
-                      '<input type="number" name="gizmo_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
+                    '<span class="col col_3_12 label">Marker:</span>' +
+                    '<div class="col col_9_12">' +
+                      '<div class="row overlay_row icon_row">' +
+                        '<label for="marker_icon" class="col col_3_12">Image:</label>' +
+                        '<input type="text" name="marker_icon" class="col col_5_12 image-value" />' +
+                        '<button class="button button-primary image-upload col col_3_12" name="marker_icon">Upload</button>' +
+                      '</div>' +
                     '</div>' +
                   '</div>',
 

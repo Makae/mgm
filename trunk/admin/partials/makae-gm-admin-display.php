@@ -19,7 +19,7 @@ if(!function_exists('makae_gm_render_admin_map')) {
               <li class="remove_gizmo" data-text="Remove mode"></li>');
 
     $toolbar_right = apply_filters('makae_gm_toolbar_right',
-             '<li class="edit_map"></li>');
+             '<li class="map_config"></li><li class="edit_map"></li>');
 
     echo apply_filters('makae_gm_pre_wrapper', '');
     echo '<div class="mgm_wrapper">';
@@ -62,6 +62,19 @@ if(!function_exists('makae_gm_render_admin_map')) {
                 <div class="col col_6_12 right specific">
                   {%CONTENT SPECIFIC%}
                 </div>
+              </div>
+              <div class="col col_12_12 actions">
+                <div class="button button-secondary cancel">Cancel</div>
+                <div class="button button-primary save clearfix">Save</div>
+              </div>
+            </div>');
+    echo apply_filters('makae_gm_config_form','
+            <div class="row config_form mgm_form">
+              <span class="close">X</span>
+              <div class="row">
+                <div class="col col_12_12 title">Edit Default Configuration</div>
+              </div>
+              <div class="row config_form_content">
               </div>
               <div class="col col_12_12 actions">
                 <div class="button button-secondary cancel">Cancel</div>

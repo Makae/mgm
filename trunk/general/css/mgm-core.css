@@ -221,6 +221,15 @@ select.col {
   background-position: -128px -32px;
 }
 
+.mgm_toolbar > li.map_config {
+  background-position: -160px 0;
+}
+
+.mgm_toolbar > li.map_config.active,
+.mgm_toolbar > li.map_config:hover {
+  background-position: -160px -32px;
+}
+
 
 
 .mgm_toolbar > li.hidden {
