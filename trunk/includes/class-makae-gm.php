@@ -32,7 +32,8 @@ class Makae_GM {
   protected $loader;
   protected $plugin_name;
   protected $version;
-
+  protected $plugin_admin;
+  protected $plugin_public;
   public function __construct() {
 
     $this->plugin_name = 'makae-gm';
@@ -67,9 +68,7 @@ class Makae_GM {
       'posts_per_page' => -1,
       'post_status' => 'publish'
     );
-    // echo "<pre>";
-    // var_dump($map_meta['_mgm_map_data']);
-    // die();
+
     if(isset($map_meta['_mgm_map_data'])) {
       $map = json_decode(stripslashes($map_meta['_mgm_map_data']), true);
     } else {
@@ -90,8 +89,9 @@ class Makae_GM {
     $map_data = htmlspecialchars(json_encode($this->getMap($post_id)));
     if(is_admin())
       makae_gm_render_admin_map($map_data);
-    else
+    else {
       makae_gm_render_map($map_data);
+    }
   }
 
   private function set_locale() {
@@ -130,24 +130,24 @@ class Makae_GM {
   }
 
   private function define_admin_hooks() {
-    $plugin_admin = new Makae_GM_Admin($this, $this->get_plugin_name(), $this->get_version());
+    $this->plugin_admin = new Makae_GM_Admin($this, $this->get_plugin_name(), $this->get_version());
 
-    $this->loader->add_action('init', $plugin_admin, 'register_post_types');
-    $this->loader->add_action('add_meta_boxes', $plugin_admin, 'add_meta_boxes');
-    $this->loader->add_action('save_post', $plugin_admin, 'save_meta_box');
+    $this->loader->add_action('init', $this->plugin_admin, 'register_post_types');
+    $this->loader->add_action('add_meta_boxes', $this->plugin_admin, 'add_meta_boxes');
+    $this->loader->add_action('save_post', $this->plugin_admin, 'save_meta_box');
 
-    $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles');
-    $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
+    $this->loader->add_action('admin_enqueue_scripts', $this->plugin_admin, 'enqueue_styles');
+    $this->loader->add_action('admin_enqueue_scripts', $this->plugin_admin, 'enqueue_scripts');
 
 
   }
 
   private function define_public_hooks() {
 
-    $plugin_public = new Makae_GM_Public($this, $this->get_plugin_name(), $this->get_version());
-    $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
-    $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
-
+    $this->plugin_public = new Makae_GM_Public($this, $this->get_plugin_name(), $this->get_version());
+    $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_styles');
+    $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_scripts');
+    add_shortcode('rgm-map', array($this->plugin_public, 'shortcode_map'));
   }
 
   public function run() {

@@ -12,7 +12,6 @@
     var dragendListenerHandler;
 
     marker.draggable = true;
-    console.log("DRAGGABLE = TRUE FOR MARKER");
     var marker = std_builder(marker);
 
     marker._register = marker.register;

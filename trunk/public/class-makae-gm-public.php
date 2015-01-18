@@ -33,12 +33,26 @@ class Makae_GM_Public {
 
   }
 
+  public function shortcode_map($attrs) {
+     $attrs = shortcode_atts( array(
+        'mapid' => null,
+    ), $attrs);
+
+    if($attrs['mapid'] == null)
+      return "<h3>No Mapdata found</h3>";
+    ob_start();
+    $this->plugin_core->render_map($attrs['mapid']);
+    return ob_get_clean();
+
+  }
+
   public function enqueue_styles() {
     wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/makae-gm-public.css', array(), $this->version, 'all' );
   }
 
   public function enqueue_scripts() {
-    wp_enqueue_script($this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/makae-gm-public.js', array('makae-gm-core', true), $this->version, true);
+    wp_enqueue_script($this->plugin_name . '_content', plugin_dir_url(__FILE__) . 'js/mgm-content.js', array('makae-gm-core'), $this->version, true);
+    wp_enqueue_script($this->plugin_name . '_init', Makae_GM_Utilities::pluginURL(__FILE__, 'general/js/mgm-init.js'), array($this->plugin_name . '_content'), $this->version, true);
 
   }
 

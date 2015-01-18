@@ -35,18 +35,27 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       this.setBounds(this.config.bounds);
   };
 
-  mgm.MGM_Map.prototype.getDefaults = function(defaults_key) {
-    if(typeof this.config.defaults == 'undefined' || typeof this.config.defaults[defaults_key] == 'undefined')
+  mgm.MGM_Map.prototype.getDefaults = function(key) {
+    if(typeof this.config.defaults == 'undefined' || typeof this.config.defaults[key] == 'undefined')
       return {};
 
-    return this.config.defaults[defaults_key];
-  }
+    return this.config.defaults[key];
+  };
 
-  mgm.MGM_Map.prototype.loadDefaults = function(object, defaults_key) {
-    var default_values = this.getDefaults(defaults_key);
-    for(var i in default_values)
+    mgm.MGM_Map.prototype.setDefaults = function(key, values) {
+      if(typeof this.config.defaults == 'undefined')
+        this.config.defaults = {};
+
+      for(var i in values)
+        this.config.defaults[key][i] = values[i];
+
+    };
+
+  mgm.MGM_Map.prototype.loadDefaults = function(object, key) {
+    var values = this.getDefaults(key);
+    for(var i in values)
       if(typeof object[i] == 'undefined' && (typeof object[i] == 'undefined' || object[i] == null))
-        object[i] = default_values[i];
+        object[i] = values[i];
 
     return object;
   };

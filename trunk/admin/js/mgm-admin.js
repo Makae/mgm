@@ -181,6 +181,14 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         self.hideEdit(map);
       });
 
+      $(map.map_root).find('.mgm_edit .config_form .save').off('click').click(function() {
+        var $form = $(this).closest('.mgm_form');
+
+        mgm.form_provider.getProvider('config').update(map, $form);
+
+        self.hideEdit(map);
+      });
+
       $(map.map_root).find('.mgm_edit .map_form .save').off('click').click(function(e) {
         var $form = $(this).closest('.mgm_form');
         mgm.form_provider.getProvider('map', map.type).update(map, $form);
@@ -378,7 +386,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                 '<div class="row viewport_row">' +
                   '<h5 class="col col_12_12 label">Overlay:</h5>' +
                 '</div>' +
-                '<div class="row overlay_row icon_row">' +
+                '<div class="row overlay_row icon_row image_upload">' +
                   '<label for="overlay_image" class="col col_3_12">Image:</label>' +
                   '<input type="text" name="overlay_image" class="col col_5_12 image-value" />' +
                   '<button class="button button-primary image-upload col col_3_12" name="overlay_image">Upload</button>' +
@@ -429,7 +437,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
               }
             }
 
-            mgm.wp_admin.customImageUpload($html.find(".overlay_row"));
+            mgm.wp_admin.customImageUpload($html.find(".image_upload"));
 
             callback($html);
           },
@@ -468,10 +476,6 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           html :'<div class="col col_6_12 right">' +
                   '<div class="row">' +
                     '<h5 class="col col_12_12 label">Polygon defaults:</h5>' +
-                    '<div class="row">' +
-                      '<label for="gizmo_name" class="col col_3_12">Name:</label>' +
-                      '<input type="text" name="gizmo_name" class="col col_9_12" />' +
-                    '</div>' +
                     '<div class="row mgm_stroke_color">' +
                       '<label for="gizmo_stroke_color" class="col col_3_12">Stroke color:</label>' +
                       '<input type="text" name="gizmo_stroke_color" class="col col_9_12" />' +
@@ -484,6 +488,14 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                       '<label for="gizmo_stroke_width" class="col col_3_12">Stroke width:</label>' +
                       '<input type="text" name="gizmo_stroke_width" class="col col_9_12" />' +
                     '</div>' +
+                    '<div class="row mgm_fill_color">' +
+                      '<label for="gizmo_fill_color" class="col col_3_12">Fill color:</label>' +
+                      '<input type="text" name="gizmo_fill_color" class="col col_9_12" />' +
+                    '</div>' +
+                    '<div class="row mgm_fill_opacity">' +
+                      '<label for="gizmo_fill_opacity" class="col col_3_12">Fill opacity:</label>' +
+                      '<input type="range" name="gizmo_fill_opacity" class="col col_9_12" min="0.0" max="1.0" step="0.01" />' +
+                    '</div>' +
                   '</div>' +
                 '</div>' +
                 '<div class="col col_6_12 left">' +
@@ -491,7 +503,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                     '<div class="row">' +
                       '<h5 class="col col_12_12 label">Marker defaults:</h5>' +
                       '<div class="col col_9_12">' +
-                        '<div class="row icon_row">' +
+                        '<div class="row icon_row image_upload">' +
                           '<label for="marker_icon" class="col col_3_12">Icon:</label>' +
                           '<input type="text" name="marker_icon" class="col col_5_12 image-value" />' +
                           '<button class="button button-primary image-upload col col_3_12" name="marker_icon">Upload</button>' +
@@ -501,61 +513,39 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                   '</div>' +
                 '</div>',
 
-          render : function(map, callback) {
+           render : function(map, callback) {
             var self = this;
             $html = $(this.html);
+            var polygon_defaults = map.getDefaults('polygon');
+            var marker_defaults = map.getDefaults('marker');
 
-            $html.find('input[name="map_name"]').val(map.config.name);
-            $html.find('input[name="map_lat"]').val(map.config.lat);
-            $html.find('input[name="map_lng"]').val(map.config.lng);
+            $html.find('input[name="gizmo_stroke_color"]').val(polygon_defaults.strokeColor);
+            $html.find('input[name="gizmo_stroke_opacity"]').val(polygon_defaults.strokeOpacity);
+            $html.find('input[name="gizmo_stroke_width"]').val(polygon_defaults.strokeWeight);
+            $html.find('input[name="gizmo_fill_opacity"]').val(polygon_defaults.fillOpacity);
+            $html.find('input[name="gizmo_fill_color"]').val(polygon_defaults.fillColor);
 
-
-            var overlay_config = map.config.overlay;
-            if(typeof overlay_config != 'undefined') {
-              if(typeof overlay_config.image != 'undefined') {
-                $html.find('input[name="overlay_image"]').val(overlay_config.image);
-              }
-
-              if(typeof overlay_config.top_right_coords != 'undefined') {
-                $html.find('input[name="overlay_tr_lat"]').val(overlay_config.top_right_coords.lat);
-                $html.find('input[name="overlay_tr_lng"]').val(overlay_config.top_right_coords.lng);
-              }
-
-              if(typeof overlay_config.bottom_left_coords != 'undefined') {
-                $html.find('input[name="overlay_bl_lat"]').val(overlay_config.bottom_left_coords.lat);
-                $html.find('input[name="overlay_bl_lng"]').val(overlay_config.bottom_left_coords.lng);
-              }
-            }
-
-            mgm.wp_admin.customImageUpload($html.find(".overlay_row"));
+            if(typeof marker_defaults.icon != 'undefined')
+              $html.find('input[name="marker_icon"]').val(marker_defaults.icon);
 
             callback($html);
           },
 
           update : function(map, form) {
             $form = $(form);
-
-            // MAP
-            map.config.name = $form.find('input[name="map_name"]').val();
-            map.config.lat = $form.find('input[name="map_lat"]').val();
-            map.config.lng = $form.find('input[name="map_lng"]').val();
-
-            // OVERLAY
-            if(typeof map.config.overlay != 'undefined')
-              var overlay_config = map.config.overlay;
-            else
-              var overlay_config = {'image':'', 'top_right_coords': {}, 'bottom_left_coords': {}};
-
-            overlay_config.image = $form.find('input[name="overlay_image"]').val();
-            overlay_config.top_right_coords.lat = $form.find('input[name="overlay_tr_lat"]').val();
-            overlay_config.top_right_coords.lng = $form.find('input[name="overlay_tr_lng"]').val();
-            overlay_config.bottom_left_coords.lat = $form.find('input[name="overlay_bl_lat"]').val();
-            overlay_config.bottom_left_coords.lng = $form.find('input[name="overlay_bl_lng"]').val();
-
-            map.setOverlay(overlay_config);
+            map.setDefaults('polygon', {
+              strokeColor : $html.find('input[name="gizmo_stroke_color"]').val(),
+              strokeOpacity : $html.find('input[name="gizmo_stroke_opacity"]').val(),
+              strokeWeight : $html.find('input[name="gizmo_stroke_width"]').val(),
+              fillColor : $html.find('input[name="gizmo_fill_color"]').val(),
+              fillOpacity : $html.find('input[name="gizmo_fill_opacity"]').val()
+            });
+            map.setDefaults('marker', {
+              icon : $html.find('input[name="marker_icon"]').val()
+            });
           },
 
-          save : function(marker, form) {
+          save : function(map, form) {
             this.update();
           }
         }
@@ -629,12 +619,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
       marker : {
         standard : {
-          html : '<div class="row mgm_position">' +
+          html : '<div class="row icon_row">' +
                     '<span class="col col_3_12 label">Marker:</span>' +
-                    '<div class="col col_9_12">' +
+                    '<div class="col col_9_12 no-padding">' +
                       '<div class="row overlay_row icon_row">' +
-                        '<label for="marker_icon" class="col col_3_12">Image:</label>' +
-                        '<input type="text" name="marker_icon" class="col col_5_12 image-value" />' +
+                        '<input type="text" name="marker_icon" class="col col_8_12 image-value" />' +
                         '<button class="button button-primary image-upload col col_3_12" name="marker_icon">Upload</button>' +
                       '</div>' +
                     '</div>' +
@@ -666,22 +655,26 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
       polygon : {
         standard : {
-          html : '<div class="row">' +
-                '<label for="gizmo_name" class="col col_3_12">Name:</label>' +
-                '<input type="text" name="gizmo_name" class="col col_9_12" />' +
-              '</div>' +
-              '<div class="row mgm_stroke_color">' +
-                '<label for="gizmo_stroke_color" class="col col_3_12">Stroke color:</label>' +
-                '<input type="text" name="gizmo_stroke_color" class="col col_9_12" />' +
-              '</div>' +
-              '<div class="row mgm_stroke_opacity">' +
-                '<label for="gizmo_stroke_opacity" class="col col_3_12">Stroke opacity:</label>' +
-                '<input type="range" name="gizmo_stroke_opacity" class="col col_9_12" min="0.0" max="1.0" step="0.01" />' +
-              '</div>' +
-              '<div class="row mgm_stroke_width">' +
-                '<label for="gizmo_stroke_width" class="col col_3_12">Stroke width:</label>' +
-                '<input type="text" name="gizmo_stroke_width" class="col col_9_12" />' +
-              '</div>',
+          html : '<div class="row mgm_stroke_color">' +
+                    '<label for="gizmo_stroke_color" class="col col_3_12">Stroke color:</label>' +
+                    '<input type="text" name="gizmo_stroke_color" class="col col_9_12" />' +
+                  '</div>' +
+                  '<div class="row mgm_stroke_opacity">' +
+                    '<label for="gizmo_stroke_opacity" class="col col_3_12">Stroke opacity:</label>' +
+                    '<input type="range" name="gizmo_stroke_opacity" class="col col_9_12" min="0.0" max="1.0" step="0.01" />' +
+                  '</div>' +
+                  '<div class="row mgm_stroke_width">' +
+                    '<label for="gizmo_stroke_width" class="col col_3_12">Stroke width:</label>' +
+                    '<input type="text" name="gizmo_stroke_width" class="col col_9_12" />' +
+                  '</div>' +
+                  '<div class="row mgm_fill_color">' +
+                    '<label for="gizmo_fill_color" class="col col_3_12">Fill color:</label>' +
+                    '<input type="text" name="gizmo_fill_color" class="col col_9_12" />' +
+                  '</div>' +
+                  '<div class="row mgm_fill_opacity">' +
+                    '<label for="gizmo_fill_opacity" class="col col_3_12">Fill opacity:</label>' +
+                    '<input type="range" name="gizmo_fill_opacity" class="col col_9_12" min="0.0" max="1.0" step="0.01" />' +
+                  '</div>',
 
           render : function(gizmo, callback) {
             var self = this;
@@ -690,6 +683,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             $html.find('input[name="gizmo_stroke_color"]').val(gizmo.strokeColor);
             $html.find('input[name="gizmo_stroke_opacity"]').val(gizmo.strokeOpacity);
             $html.find('input[name="gizmo_stroke_width"]').val(gizmo.strokeWeight);
+            $html.find('input[name="gizmo_fill_color"]').val(gizmo.fillColor);
+            $html.find('input[name="gizmo_fill_opacity"]').val(gizmo.fillOpacity);
             callback($html);
           },
 
@@ -698,6 +693,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             gizmo.strokeColor = $html.find('input[name="gizmo_stroke_color"]').val();
             gizmo.strokeOpacity = $html.find('input[name="gizmo_stroke_opacity"]').val();
             gizmo.strokeWeight = $html.find('input[name="gizmo_stroke_width"]').val();
+            gizmo.fillColor = $html.find('input[name="gizmo_fill_color"]').val();
+            gizmo.fillOpacity = $html.find('input[name="gizmo_fill_opacity"]').val();
 
             this.refreshBinded(gizmo);
           },
