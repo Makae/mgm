@@ -34,6 +34,10 @@ class Makae_GM {
   protected $version;
   protected $plugin_admin;
   protected $plugin_public;
+
+  protected $enqueued_scripts = array();
+  protected $enqueued_styles = array();
+
   public function __construct() {
 
     $this->plugin_name = 'makae-gm';
@@ -44,6 +48,7 @@ class Makae_GM {
     $this->define_general_hooks();
     $this->define_admin_hooks();
     $this->define_public_hooks();
+
 
   }
 
@@ -102,8 +107,7 @@ class Makae_GM {
   }
 
   public function plugins_loaded() {
-    error_reporting(E_ALL);
-    ini_set("display_errors", 1);
+    do_action('makae_gm_enqueue');
     include_once Makae_GM_Utilities::pluginDir(__FILE__) . 'config.php';
 
 
@@ -138,7 +142,6 @@ class Makae_GM {
 
     $this->loader->add_action('admin_enqueue_scripts', $this->plugin_admin, 'enqueue_styles');
     $this->loader->add_action('admin_enqueue_scripts', $this->plugin_admin, 'enqueue_scripts');
-
 
   }
 
@@ -209,6 +212,22 @@ class Makae_GM {
     wp_enqueue_script('jquery');
     wp_enqueue_script('google-maps-drawing', $this->get_google_maps_url(), array('jquery'), $this->version, true);
     wp_enqueue_script('makae-gm-core', Makae_GM_Utilities::pluginUrl( __FILE__, 'general/js/mgm-core.js'), array('jquery'), $this->version, true);
+  }
+
+  public function enqueue_content_provider_style($style_name, $path, $dependencies=array(), $version='0.1') {
+    $this->enqueued_styles[] = array('name' => $style_nalme, 'path' => $path, 'dependencies' => $dependencies, 'version' => $version);
+  }
+
+  public function enqueue_content_provider_script($script_name, $path, $dependencies=array()) {
+    $this->enqueued_scripts[] = array('name' => $script_name, 'path' => $path, 'dependencies' => $dependencies, 'version' => $version);
+  }
+
+  public function get_enqueued_styles() {
+    return $this->enqueued_styles;
+  }
+
+  public function get_enqueued_scripts() {
+    return $this->enqueued_scripts;
   }
 
 }

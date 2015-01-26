@@ -29,7 +29,6 @@ class Makae_GM_Admin {
     $this->plugin_core = $plugin_core;
     $this->plugin_name = $plugin_name;
     $this->version = $version;
-
   }
 
   public function add_meta_boxes() {
@@ -44,9 +43,9 @@ class Makae_GM_Admin {
   }
 
   public function render_meta_box($post) {
-      wp_nonce_field('makae_map', 'makae_map_nonce');
-      echo '<input type="hidden" name="mgm_map_data" value="" />';
-      $this->plugin_core->render_map($post->ID);
+    wp_nonce_field('makae_map', 'makae_map_nonce');
+    echo '<input type="hidden" name="mgm_map_data" value="" />';
+    $this->plugin_core->render_map($post->ID);
   }
 
   public function save_meta_box() {
@@ -155,19 +154,34 @@ class Makae_GM_Admin {
 
   public function enqueue_styles() {
     wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/makae-gm-admin.css', array(), $this->version, 'all');
+
+    foreach($this->plugin_core->get_enqueued_styles() as $data) {
+      $data['dependencies'] = array_merge($data['dependencies'], array($this->plugin_name));
+      wp_enqueue_style($data['name'], $data['path'], $data['dependencies'], $data['version']);
+    }
   }
 
   public function enqueue_scripts() {
     if(get_post_type() == 'makae-map') {
-      // Is used for Map-upload
+      // Is used for Image-upload
       wp_enqueue_media();
     }
 
     wp_enqueue_script('makae-gm-admin', plugin_dir_url(__FILE__) . 'js/mgm-admin.js', array('makae-gm-core'), $this->version, true);
     wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/makae-gm-admin.js', array('makae-gm-admin'), $this->version, true);
-    wp_enqueue_script($this->plugin_name . '_gizmos', plugin_dir_url(__FILE__) . 'js/mgm-gizmos.js', array($this->plugin_name), $this->version, true);
-    wp_enqueue_script($this->plugin_name . '_content', plugin_dir_url(__FILE__) . 'js/mgm-content.js', array($this->plugin_name), $this->version, true);
-    wp_enqueue_script($this->plugin_name . '_init', Makae_GM_Utilities::pluginURL(__FILE__, 'general/js/mgm-init.js'), array($this->plugin_name . '_gizmos', $this->plugin_name . '_content'), $this->version, true);
+
+    $dependency_core = array($this->plugin_name);
+    wp_enqueue_script($this->plugin_name . '_gizmos', plugin_dir_url(__FILE__) . 'js/mgm-gizmos.js', $dependency_core, $this->version, true);
+    wp_enqueue_script($this->plugin_name . '_content', plugin_dir_url(__FILE__) . 'js/mgm-content.js', $dependency_core, $this->version, true);
+
+    $init_dependencies = array($this->plugin_name . '_gizmos', $this->plugin_name . '_content');
+    foreach($this->plugin_core->get_enqueued_scripts() as $data) {
+      $data['dependencies'] = array_merge($data['dependencies'], $dependency_core);
+      wp_enqueue_script($data['name'], $data['path'], $data['dependencies'], $data['version'], true);
+      $init_dependencies[] = $data['name'];
+    }
+
+    wp_enqueue_script($this->plugin_name . '_init', Makae_GM_Utilities::pluginURL(__FILE__, 'general/js/mgm-init.js'), $init_dependencies, $this->version, true);
   }
 
 }

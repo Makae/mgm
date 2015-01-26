@@ -41,6 +41,7 @@ require plugin_dir_path( __FILE__ ) . 'includes/class-makae-gm.php';
 
 function run_makae_gm() {
   $plugin = new Makae_GM();
+  $GLOBALS['MAKAE_GM_CORE'] = $plugin;
   $plugin->run();
 }
 run_makae_gm();
