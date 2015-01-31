@@ -201,9 +201,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
   var _mgm = {
     initialized : false,
+
     config : {
       'map_selector' : '.mgm_map'
     },
+
     maps : [],
     init : function() {
       var self = this;
@@ -229,17 +231,36 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
           }
         }
+        self.menu.init(map);
       });
 
       this.initialized = true;
       console.log("MGM Core initialized");
       $(window).triggerHandler('mgm.loaded', {'mgm': mgm});
     },
+
+    menu : {
+      transition_time : 200,
+      init : function(map) {
+        var context = $(map.map_dom).closest('.mgm_wrapper');
+        $(context).find('.interaction.menu').off('click').on('click', function() {
+          mgm.hideAllOverlays(map.map_dom);
+          mgm.showOverlay(map.map_dom, '.mgm_menu_overlay');
+        });
+
+        $(context).find('.interaction.close').off('click').on('click', function() {
+          mgm.hideOverlay(map.map_dom, '.' + $(this).attr('data-overlay'));
+        });
+      }
+
+    },
+
     getMap : function(idx) {
       if(idx >= this.maps.length || idx < 0)
         return null;
       return this.maps[idx];
     },
+
     getMapData : function(idx) {
       var map = this.getMap(idx);
 
@@ -252,7 +273,74 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       };
 
       return data;
+    },
+
+    loadContent : function(gizmo) {
+      var self = this;
+      var overlay = '.mgm_content_overlay';
+      this.hideAllOverlays(gizmo.mgm_map.map_dom, function() {
+        self.showOverlay(gizmo.mgm_map.map_dom, overlay);
+      });
+
+      mgm.content_manager.callProvider(gizmo.content_provider, gizmo, function(content) {
+        self.fillOverlay(gizmo.mgm_map.map_dom, overlay, content);
+      });
+    },
+
+    hideOverlay : function(map, overlay, callback) {
+      $overlay = $(map).closest('.mgm_wrapper').find('.mgm_gui_overlay').filter(overlay);
+      if(!$overlay.hasClass('visible')) {
+        if(typeof callback == 'undefined')
+          return;
+
+        callback();
+      } else {
+        $overlay.removeClass('visible');
+
+        if(typeof callback == 'undefined')
+          return;
+
+        window.setTimeout(function() {
+          callback();
+        }, mgm.menu.transition_time)
+      }
+    },
+
+    hideAllOverlays : function(map, callback) {
+      $overlays = $(map).closest('.mgm_wrapper').find('.mgm_gui_overlay.visible');
+      if($overlays.length < 0) {
+        if(typeof callback == 'undefined')
+          return;
+
+        callback();
+      } else {
+        $overlays.each(function() {
+          $(this).removeClass('visible');
+        });
+
+        if(typeof callback == 'undefined')
+          return;
+
+        window.setTimeout(function() {
+          callback();
+        }, mgm.menu.transition_time)
+
+      }
+    },
+
+    showOverlay : function(map, overlay, loading) {
+      var loading = typeof loading == 'undefined' ? false : true;
+      var $overlay = $(map).closest('.mgm_wrapper').find('.mgm_gui_overlay').filter(overlay);
+      $overlay.addClass('visible');
+      if(loading)
+        $overlay.addClass('loading');
+    },
+
+    fillOverlay : function(map, overlay, content) {
+      var $overlay = $(map).closest('.mgm_wrapper').find('.mgm_gui_overlay').filter(overlay);
+      $overlay.removeClass('loading').find('.content_wrapper').html(content);
     }
+
   };
 
   mgm.builder = {
@@ -289,8 +377,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             delete marker.onClick;
           };
 
-          marker.onClick = function(e, callback) {
-            mgm.content_manager.callProvider(marker.content_provider, marker, callback);
+          marker.onClick = function(e) {
+            mgm.loadContent(marker);
           };
 
           marker.getData = function() {
@@ -333,8 +421,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             delete polygon.onClick;
           };
 
-          polygon.onClick = function(e, callback) {
-            mgm.content_manager.callProvider(polygon.content_provider, polygon, callback);
+          polygon.onClick = function(e) {
+            mgm.loadContent(polygon);
           };
 
           polygon.getData = function() {
@@ -361,22 +449,26 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
   mgm.content_manager = {
     callProvider : function(key, gizmo, callback) {
-      if(typeof this.providers[key] != 'undefined')
-        this.providers[key](gizmo, callback);
-      else
-        this.providers.standard(gizmo, callback);
+      if(typeof this.providers[key] == 'undefined') {
+        console.error("The content_manager has no provider with the key '" + key + "'");
+        return;
+      }
+      this.providers[key](gizmo, callback);
     },
+
+    setProvider : function(key, call) {
+      this.providers[key] = call;
+    },
+
     providers : {
       standard : function(gizmo, callback) {
         callback(gizmo.content_data)
       },
       paragraph : function(gizmo, callback) {
         callback(gizmo.content_data)
-      },
-      setProvider : function(key, call) {
-        this[group][key] = call;
       }
     }
+
   };
 
   mgm.utils = {

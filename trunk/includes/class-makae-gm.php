@@ -127,10 +127,10 @@ class Makae_GM {
 
   private function define_general_hooks () {
     $this->loader->add_action('plugins_loaded', $this, 'plugins_loaded');
-    $this->loader->add_action('wp_enqueue_scripts', $this, 'enqueue_scripts');
-    $this->loader->add_action('wp_enqueue_scripts', $this, 'enqueue_styles');
-    $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_scripts');
-    $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_styles');
+    $this->loader->add_action('wp_enqueue_scripts', $this, 'enqueue_scripts', 50);
+    $this->loader->add_action('wp_enqueue_scripts', $this, 'enqueue_styles', 50);
+    $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_scripts', 50);
+    $this->loader->add_action('admin_enqueue_scripts', $this, 'enqueue_styles', 50);
   }
 
   private function define_admin_hooks() {
@@ -148,8 +148,8 @@ class Makae_GM {
   private function define_public_hooks() {
 
     $this->plugin_public = new Makae_GM_Public($this, $this->get_plugin_name(), $this->get_version());
-    $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_styles');
-    $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_scripts');
+    $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_styles', 50);
+    $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_scripts', 50);
     add_shortcode('rgm-map', array($this->plugin_public, 'shortcode_map'));
   }
 
@@ -205,17 +205,17 @@ class Makae_GM {
   }
 
   public function enqueue_styles() {
-    wp_enqueue_style('makae-gm-core', Makae_GM_Utilities::pluginUrl( __FILE__, 'general/css/mgm-core.css'), array(), $this->version, 'all');
+    wp_enqueue_style('makae-gm-core', Makae_GM_Utilities::pluginUrl(__FILE__, 'general/css/mgm-core.css'), array(), $this->version, 'all');
   }
 
   public function enqueue_scripts() {
     wp_enqueue_script('jquery');
     wp_enqueue_script('google-maps-drawing', $this->get_google_maps_url(), array('jquery'), $this->version, true);
-    wp_enqueue_script('makae-gm-core', Makae_GM_Utilities::pluginUrl( __FILE__, 'general/js/mgm-core.js'), array('jquery'), $this->version, true);
+    wp_enqueue_script('makae-gm-core', Makae_GM_Utilities::pluginUrl(__FILE__, 'general/js/mgm-core.js'), array('jquery'), $this->version, true);
   }
 
   public function enqueue_content_provider_style($style_name, $path, $dependencies=array(), $version='0.1') {
-    $this->enqueued_styles[] = array('name' => $style_nalme, 'path' => $path, 'dependencies' => $dependencies, 'version' => $version);
+    $this->enqueued_styles[] = array('name' => $style_name, 'path' => $path, 'dependencies' => $dependencies, 'version' => $version);
   }
 
   public function enqueue_content_provider_script($script_name, $path, $dependencies=array()) {

@@ -1,4 +1,5 @@
 (function($) {
+  console.log("INIT SCRIPT");
   mgm.init();
   if(mgm.admin)
     mgm.admin.init();

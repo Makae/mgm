@@ -51,8 +51,10 @@ class Makae_GM_Public {
   }
 
   public function enqueue_scripts() {
-    wp_enqueue_script($this->plugin_name . '_content', plugin_dir_url(__FILE__) . 'js/mgm-content.js', array('makae-gm-core'), $this->version, true);
-    wp_enqueue_script($this->plugin_name . '_init', Makae_GM_Utilities::pluginURL(__FILE__, 'general/js/mgm-init.js'), array($this->plugin_name . '_content'), $this->version, true);
+    //wp_enqueue_script($this->plugin_name . '_content', plugin_dir_url(__FILE__) . 'js/mgm-content.js', array('makae-gm-core'), $this->version, true);
+    $appended_scripts = Makae_GM_Utilities::enqueue_dependent_scripts($this->plugin_core->get_enqueued_scripts(), array());
+    $init_dependencies = array_merge(array('makae-gm-core'), $appended_scripts);
+    wp_enqueue_script($this->plugin_name . '_init', Makae_GM_Utilities::pluginURL(__FILE__, 'general/js/mgm-init.js'), $init_dependencies, $this->version, true);
 
   }
 

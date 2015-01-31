@@ -121,7 +121,12 @@ select.col {
 
 
 .mgm_wrapper {
+  z-index: 1;
   position: relative;
+}
+
+.mgm_wrapper.public {
+  overflow: hidden;
 }
 
 .mgm_map {
@@ -131,10 +136,101 @@ select.col {
   background-color: #AFAFAF;
 }
 
+.mgm_gui_overlay {
+  z-index: 20;
+  position: absolute;
+  box-sizing: border-box;
+  top: 0;
+  padding:14px;
+
+  height: 100%;
+  min-width: 30%;
+  max-width: 80%;
+  background: rgba(255, 255, 255, 0.9);
+
+  -webkit-transition:all 200ms ease-in-out;
+  -moz-transition:all 200ms ease-in-out;
+  -ms-transition:all 200ms ease-in-out;
+  -o-transition:all 200ms ease-in-out;
+  transition:all 200ms ease-in-out;
+}
+
+.mgm_content_overlay {
+  left: 0;
+  -webkit-transform:translate3d(-100%, 0, 0);
+  -moz-transform:translate3d(-100%, 0, 0);
+  -ms-transform:translate3d(-100%, 0, 0);
+  transform:translate3d(-100%, 0, 0);
+}
+
+.mgm_menu_overlay {
+  right: 0;
+  -webkit-transform:translate3d(100%, 0, 0);
+  -moz-transform:translate3d(100%, 0, 0);
+  -ms-transform:translate3d(100%, 0, 0);
+  transform:translate3d(100%, 0, 0);
+}
+
+.mgm_gui_overlay.visible {
+  -webkit-transform:translate3d(0%, 0, 0);
+  -moz-transform:translate3d(0%, 0, 0);
+  -ms-transform:translate3d(0%, 0, 0);
+  transform:translate3d(0%, 0, 0);
+}
+
+.mgm_gui_overlay .loading_animation {
+  display: none;
+  position: absolute;
+
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  background-image: url('data:image/gif;base64,R0lGODlhEAAQAPIAAP///wB0osLd6EKXuQB0omKpxYK60ZLD1iH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==');
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.mgm_gui_overlay.loading .loading_animation {
+  display: block;
+}
+
+
+.mgm_wrapper .interaction {
+  position: absolute;
+  display: block;
+  z-index: 15;
+  padding: 14px;
+  top: 0;
+
+  line-height: 0;
+  cursor: pointer;
+}
+
+.mgm_wrapper .interaction:hover {
+  color:#0074A2;
+}
+
+.mgm_wrapper .interaction.right {
+  right: 0;
+}
+
+.mgm_wrapper .interaction.left {
+  left: 0;
+}
+
+.mgm_wrapper .interaction.menu {
+  right: 0;
+
+  background: rgba(255, 255, 255, 0.9);
+}
+
 /*********************
  *      ADMIN        *
  *********************/
 .mgm_wrapper {
+
   -webkit-transition:filter 400ms ease-in-out, -webkit-filter 400ms ease-in-out, -moz-filter 400ms ease-in-out, -o-filter 400ms ease-in-out;
   -moz-transition:filter 400ms ease-in-out, -webkit-filter 400ms ease-in-out, -moz-filter 400ms ease-in-out, -o-filter 400ms ease-in-out;
   -ms-transition:filter 400ms ease-in-out, -webkit-filter 400ms ease-in-out, -moz-filter 400ms ease-in-out, -o-filter 400ms ease-in-out;

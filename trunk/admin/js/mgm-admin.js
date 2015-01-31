@@ -328,10 +328,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
   mgm.form_provider = {
     renderProvider : function(provider_type, provider_key, obj, callback) {
-      if(typeof this.providers[provider_type] != 'undefined' && this.providers[provider_type][provider_key] != 'undefined')
-        this.providers[provider_type][provider_key].render(obj, callback);
-      else
-        this.providers[provider_type].standard.render(obj, callback);
+      if(typeof this.providers[provider_type] == 'undefined' || this.providers[provider_type][provider_key] == 'undefined') {
+        console.error("The form_provider has no provider with the type '" + provider_type + "' and the key '" + provider_key + "'");
+        return;
+      }
+      this.providers[provider_type].standard.render(obj, callback);
     },
 
     setProvider : function(provider_type, provider_key, provider) {
@@ -690,12 +691,12 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
           update : function(gizmo, form) {
             $form = $(form);
-            gizmo.strokeColor = $html.find('input[name="gizmo_stroke_color"]').val();
-            gizmo.strokeOpacity = $html.find('input[name="gizmo_stroke_opacity"]').val();
-            gizmo.strokeWeight = $html.find('input[name="gizmo_stroke_width"]').val();
-            gizmo.fillColor = $html.find('input[name="gizmo_fill_color"]').val();
-            gizmo.fillOpacity = $html.find('input[name="gizmo_fill_opacity"]').val();
-
+            gizmo.strokeColor = $form.find('input[name="gizmo_stroke_color"]').val();
+            gizmo.strokeOpacity = $form.find('input[name="gizmo_stroke_opacity"]').val();
+            gizmo.strokeWeight = $form.find('input[name="gizmo_stroke_width"]').val();
+            gizmo.fillColor = $form.find('input[name="gizmo_fill_color"]').val();
+            gizmo.fillOpacity = $form.find('input[name="gizmo_fill_opacity"]').val();
+            console.log(gizmo);
             this.refreshBinded(gizmo);
           },
 
@@ -719,10 +720,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
   mgm.content_form_provider = {
     renderProvider : function(provider_key, gizmo, callback) {
-      if(typeof this.providers[provider_key] != 'undefined')
-        this.providers[provider_key].render(gizmo, callback);
-      else
-        this.providers.standard.render(gizmo, callback);
+      if(typeof this.providers[provider_key] == 'undefined') {
+        console.error("The content_form_provider has no provider with the key '" + provider_key + "'");
+        return;
+      }
+      this.providers[provider_key].render(gizmo, callback);
     },
 
     setProvider : function(provider_key, provider) {

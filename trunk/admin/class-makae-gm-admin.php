@@ -154,7 +154,6 @@ class Makae_GM_Admin {
 
   public function enqueue_styles() {
     wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/makae-gm-admin.css', array(), $this->version, 'all');
-
     foreach($this->plugin_core->get_enqueued_styles() as $data) {
       $data['dependencies'] = array_merge($data['dependencies'], array($this->plugin_name));
       wp_enqueue_style($data['name'], $data['path'], $data['dependencies'], $data['version']);
@@ -175,11 +174,9 @@ class Makae_GM_Admin {
     wp_enqueue_script($this->plugin_name . '_content', plugin_dir_url(__FILE__) . 'js/mgm-content.js', $dependency_core, $this->version, true);
 
     $init_dependencies = array($this->plugin_name . '_gizmos', $this->plugin_name . '_content');
-    foreach($this->plugin_core->get_enqueued_scripts() as $data) {
-      $data['dependencies'] = array_merge($data['dependencies'], $dependency_core);
-      wp_enqueue_script($data['name'], $data['path'], $data['dependencies'], $data['version'], true);
-      $init_dependencies[] = $data['name'];
-    }
+
+    $appended_scripts = Makae_GM_Utilities::enqueue_dependent_scripts($this->plugin_core->get_enqueued_scripts(), $dependency_core);
+    $init_dependencies = array_merge($init_dependencies, $appended_scripts);
 
     wp_enqueue_script($this->plugin_name . '_init', Makae_GM_Utilities::pluginURL(__FILE__, 'general/js/mgm-init.js'), $init_dependencies, $this->version, true);
   }
