@@ -60,6 +60,15 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     return object;
   };
 
+
+  mgm.MGM_Map.prototype.scrollPan = function(lat, lng, zoom) {
+    if(typeof lat != 'undefined' && typeof lng != 'undefined' )
+      this.map.panTo(mgm.utils.latLngToPos(lat, lng));
+
+    if(typeof zoom != 'undefined')
+      this.map.setZoom(zoom * 1);
+  };
+
   // Took from: http://stackoverflow.com/questions/3125065/how-do-i-limit-panning-in-google-maps-api-v3?answertab=active#tab-top
   mgm.MGM_Map.prototype.setBounds = function(bounds) {
     if(typeof bounds.position != 'undefined') {
@@ -472,7 +481,12 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   mgm.utils = {
-    latLngToPos : function(config) {
+    latLngToPos : function(arg1, arg2) {
+      var config;
+      if(typeof arg2 == 'undefined')
+        config = arg1;
+      else
+        config = {'lat' : arg1, 'lng' : arg2};
       return new google.maps.LatLng(config.lat, config.lng);
     },
 

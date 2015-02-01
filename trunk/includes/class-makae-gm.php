@@ -143,6 +143,8 @@ class Makae_GM {
     $this->loader->add_action('admin_enqueue_scripts', $this->plugin_admin, 'enqueue_styles');
     $this->loader->add_action('admin_enqueue_scripts', $this->plugin_admin, 'enqueue_scripts');
 
+    $this->loader->add_filter('upload_mimes', $this, 'cc_mime_types');
+
   }
 
   private function define_public_hooks() {
@@ -211,7 +213,7 @@ class Makae_GM {
   public function enqueue_scripts() {
     wp_enqueue_script('jquery');
     wp_enqueue_script('google-maps-drawing', $this->get_google_maps_url(), array('jquery'), $this->version, true);
-    wp_enqueue_script('makae-gm-core', Makae_GM_Utilities::pluginUrl(__FILE__, 'general/js/mgm-core.js'), array('jquery'), $this->version, true);
+    wp_enqueue_script('makae-gm-core', Makae_GM_Utilities::pluginUrl(__FILE__, 'general/js/mgm-core.js'), array('jquery', 'google-maps-drawing'), $this->version, true);
   }
 
   public function enqueue_content_provider_style($style_name, $path, $dependencies=array(), $version='0.1') {
@@ -228,6 +230,11 @@ class Makae_GM {
 
   public function get_enqueued_scripts() {
     return $this->enqueued_scripts;
+  }
+
+  public function cc_mime_types($mimes) {
+    $mimes['svg'] = 'image/svg+xml';
+    return $mimes;
   }
 
 }

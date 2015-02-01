@@ -353,14 +353,20 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         standard : {
           html :'<div class="col col_6_12 left">' +
                 '<div class="row mgm_position">' +
-                  '<span class="col col_3_12 label">Position:</span>' +
+                  '<span class="col col_3_12 label">Position</span>' +
                   '<div class="col col_9_12 no-padding latlng_field">' +
                     '<label for="map_lat" class="col col_1_12 lat_label">Lat:</label>' +
-                    '<input type="number" name="map_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<input type="number" name="map_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.00000000001" />' +
                     '<label for="map_lng" class="col col_1_12 lng_label">Lng:</label>' +
-                    '<input type="number" name="map_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
+                    '<input type="number" name="map_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.00000000001" />' +
                   '</div>' +
                 '</div>' +
+
+                '<div class="row">' +
+                  '<label for="map_zoom" class="col col_3_12 lat_label">Zoom:</label>' +
+                  '<input type="number" name="map_zoom" class="col col_9_12" min="1" max="21" step="1" />' +
+                '</div>' +
+
                 '<div class="row viewport_row">' +
                   '<h5 class="col col_12_12 label">Viewport Restrictions:</h5>' +
                 '</div>' +
@@ -368,18 +374,18 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                   '<span class="col col_3_12 label">Bottom-Left:</span>' +
                   '<div class="col col_9_12 no-padding latlng_field">' +
                     '<label for="viewport_tr_lat" class="col col_1_12 lat_label">Lat:</label>' +
-                    '<input type="number" name="viewport_bl_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<input type="number" name="viewport_bl_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.00000000001" />' +
                     '<label for="viewport_tr_lng" class="col col_1_12 lng_label">Lng:</label>' +
-                    '<input type="number" name="viewport_bl_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
+                    '<input type="number" name="viewport_bl_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.00000000001" />' +
                   '</div>' +
                 '</div>' +
                 '<div class="row">' +
                   '<span class="col col_3_12 label">Top-Right:</span>' +
                   '<div class="col col_9_12 no-padding latlng_field">' +
                     '<label for="viewport_bl_lat" class="col col_1_12 lat_label">Lat:</label>' +
-                    '<input type="number" name="viewport_tr_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<input type="number" name="viewport_tr_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.00000000001" />' +
                     '<label for="viewport_bl_lng" class="col col_1_12 lng_label">Lng:</label>' +
-                    '<input type="number" name="viewport_tr_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
+                    '<input type="number" name="viewport_tr_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.00000000001" />' +
                   '</div>' +
                 '</div>' +
               '</div>' +
@@ -396,18 +402,18 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                   '<span class="col col_3_12 label">Bottom-Left:</span>' +
                   '<div class="col col_9_12 no-padding latlng_field">' +
                     '<label for="overlay_tr_lat" class="col col_1_12 lat_label">Lat:</label>' +
-                    '<input type="number" name="overlay_bl_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<input type="number" name="overlay_bl_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.00000000001" />' +
                     '<label for="overlay_tr_lng" class="col col_1_12 lng_label">Lng:</label>' +
-                    '<input type="number" name="overlay_bl_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
+                    '<input type="number" name="overlay_bl_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.00000000001" />' +
                   '</div>' +
                 '</div>' +
                 '<div class="row">' +
                   '<span class="col col_3_12 label">Top-Right:</span>' +
                   '<div class="col col_9_12 no-padding latlng_field">' +
                     '<label for="overlay_bl_lat" class="col col_1_12 lat_label">Lat:</label>' +
-                    '<input type="number" name="overlay_tr_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.000001" />' +
+                    '<input type="number" name="overlay_tr_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.00000000001" />' +
                     '<label for="overlay_bl_lng" class="col col_1_12 lng_label">Lng:</label>' +
-                    '<input type="number" name="overlay_tr_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.000001" />' +
+                    '<input type="number" name="overlay_tr_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.00000000001" />' +
                   '</div>' +
                 '</div>' +
               '</div>',
@@ -417,6 +423,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             $html = $(this.html);
 
             $html.find('input[name="map_name"]').val(map.config.name);
+            $html.find('input[name="map_zoom"]').val(map.config.zoom);
             $html.find('input[name="map_lat"]').val(map.config.lat);
             $html.find('input[name="map_lng"]').val(map.config.lng);
 
@@ -448,6 +455,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
             // MAP
             map.config.name = $form.find('input[name="map_name"]').val();
+            map.config.zoom = $form.find('input[name="map_zoom"]').val();
             map.config.lat = $form.find('input[name="map_lat"]').val();
             map.config.lng = $form.find('input[name="map_lng"]').val();
 
@@ -464,6 +472,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             overlay_config.bottom_left_coords.lng = $form.find('input[name="overlay_bl_lng"]').val();
 
             map.setOverlay(overlay_config);
+            map.scrollPan(map.config.lat, map.config.lng, map.config.zoom);
           },
 
           save : function(marker, form) {
