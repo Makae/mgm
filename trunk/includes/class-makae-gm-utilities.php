@@ -48,23 +48,41 @@ class Makae_GM_Utilities {
     return $dirs[0];
   }
 
+  public static function array_extend_recursively($main, $extend) {
+    if(!is_array($extend)) {
+      if(isset($main))
+        return $main;
+      return $extend;
+    }
+
+    foreach($extend as $key => $value) {
+      if(array_key_exists($key, $main)) {
+        $main[$key] = static::array_extend_recursively($main[$key], $value);
+        continue;
+      } else {
+        $main[$key] = $value;
+      }
+    }
+    return $main;
+  }
+
   public static function get(&$var, $default=null) {
     return isset($var) ? $var : $default;
   }
 
-  public static function enqueue_dependent_scripts($scripts, $dependencies, $in_footer=true) {
+  public static function enqueue_dependent_scripts($scripts, $dependencies,  $in_footer=true) {
     return static::enqueue_dependent_files($scripts, $dependencies, Makae_GM_Utilities::METHOD_SCRIPTS, $in_footer);
   }
 
-  public static function enqueue_dependent_styles($scripts, $dependencies, $in_footer=true) {
-    return static::enqueue_dependent_files($scripts, $dependencies, Makae_GM_Utilities::METHOD_STYLES, $in_footer);
+  public static function enqueue_dependent_styles($scripts, $dependencies, $media='all') {
+    return static::enqueue_dependent_files($scripts, $dependencies, Makae_GM_Utilities::METHOD_STYLES, $media);
   }
 
-  public static function enqueue_dependent_files($files, $dependencies, $method, $in_footer) {
+  public static function enqueue_dependent_files($files, $dependencies, $method, $last_arg) {
     $appended_files = array();
     foreach($files as $data) {
       $data['dependencies'] = array_merge($data['dependencies'], $dependencies);
-      $args = array($data['name'], $data['path'], $data['dependencies'], $data['version'], $in_footer);
+      $args = array($data['name'], $data['path'], $data['dependencies'], $data['version'], $last_arg);
       call_user_func_array($method, $args);
       $appended_files[] = $data['name'];
     }

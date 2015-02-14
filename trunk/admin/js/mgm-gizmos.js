@@ -104,7 +104,6 @@
     };
 
     polygon.onChange = function(e, callback) {
-      debugger;
       polygon.update();
     }
 

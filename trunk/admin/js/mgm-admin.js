@@ -119,8 +119,16 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       $(window).triggerHandler('mgm.admin.initialized', {'mgm': mgm});
     },
 
-    initDrawingManager : function(map) {
-      var config = {
+    updateDrawingManager : function(map) {
+      if(!map.dm)
+        return;
+      var config = this.getDrawingManagerConfig(map);
+      for(var key in config)
+        map.dm[key] = config[key]
+    },
+
+    getDrawingManagerConfig : function(map) {
+      return {
         drawingMode: google.maps.drawing.OverlayType.MARKER,
         drawingControl: true,
         drawingControlOptions: {
@@ -133,6 +141,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         markerOptions: map.getDefaults('marker'),
         polygonOptions: map.getDefaults('polygon')
       };
+    },
+
+    initDrawingManager : function(map) {
+      var config = this.getDrawingManagerConfig(map);
 
       map.dm = new google.maps.drawing.DrawingManager(config);
 
@@ -332,7 +344,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         console.error("The form_provider has no provider with the type '" + provider_type + "' and the key '" + provider_key + "'");
         return;
       }
-      this.providers[provider_type].standard.render(obj, callback);
+      var _callback = function($html) {
+        mgm.wp_admin.prepareFormInputs($html);
+        callback($html);
+      };
+      this.providers[provider_type].standard.render(obj, _callback);
     },
 
     setProvider : function(provider_type, provider_key, provider) {
@@ -445,8 +461,6 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
               }
             }
 
-            mgm.wp_admin.customImageUpload($html.find(".image_upload"));
-
             callback($html);
           },
 
@@ -488,7 +502,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                     '<h5 class="col col_12_12 label">Polygon defaults:</h5>' +
                     '<div class="row mgm_stroke_color">' +
                       '<label for="gizmo_stroke_color" class="col col_3_12">Stroke color:</label>' +
-                      '<input type="text" name="gizmo_stroke_color" class="col col_9_12" />' +
+                      '<input type="text" name="gizmo_stroke_color" class="col col_9_12 color-field" />' +
                     '</div>' +
                     '<div class="row mgm_stroke_opacity">' +
                       '<label for="gizmo_stroke_opacity" class="col col_3_12">Stroke opacity:</label>' +
@@ -500,7 +514,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                     '</div>' +
                     '<div class="row mgm_fill_color">' +
                       '<label for="gizmo_fill_color" class="col col_3_12">Fill color:</label>' +
-                      '<input type="text" name="gizmo_fill_color" class="col col_9_12" />' +
+                      '<input type="text" name="gizmo_fill_color" class="col col_9_12 color-field" />' +
                     '</div>' +
                     '<div class="row mgm_fill_opacity">' +
                       '<label for="gizmo_fill_opacity" class="col col_3_12">Fill opacity:</label>' +
@@ -526,9 +540,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
            render : function(map, callback) {
             var self = this;
             $html = $(this.html);
+
             var polygon_defaults = map.getDefaults('polygon');
             var marker_defaults = map.getDefaults('marker');
-
             $html.find('input[name="gizmo_stroke_color"]').val(polygon_defaults.strokeColor);
             $html.find('input[name="gizmo_stroke_opacity"]').val(polygon_defaults.strokeOpacity);
             $html.find('input[name="gizmo_stroke_width"]').val(polygon_defaults.strokeWeight);
@@ -550,9 +564,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
               fillColor : $html.find('input[name="gizmo_fill_color"]').val(),
               fillOpacity : $html.find('input[name="gizmo_fill_opacity"]').val()
             });
-            map.setDefaults('marker', {
-              icon : $html.find('input[name="marker_icon"]').val()
-            });
+            var icon = $html.find('input[name="marker_icon"]').val();
+            if(icon != '')
+              map.setDefaults('marker', {icon : icon});
+            mgm.admin.updateDrawingManager(map);
           },
 
           save : function(map, form) {
@@ -630,11 +645,18 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       marker : {
         standard : {
           html : '<div class="row icon_row">' +
-                    '<span class="col col_3_12 label">Marker:</span>' +
-                    '<div class="col col_9_12 no-padding">' +
-                      '<div class="row overlay_row icon_row">' +
-                        '<input type="text" name="marker_icon" class="col col_8_12 image-value" />' +
-                        '<button class="button button-primary image-upload col col_3_12" name="marker_icon">Upload</button>' +
+                    '<div class="row icon_row image_upload">' +
+                      '<label for="marker_icon" class="col col_3_12">Icon:</label>' +
+                      '<input type="text" name="marker_icon" class="col col_5_12 image-value no-padding" />' +
+                      '<button class="button button-primary image-upload col col_3_12" name="marker_icon">Upload</button>' +
+                    '</div>' +
+                    '<div class="row mgm_position">' +
+                      '<span class="col col_3_12 label">Position:</span>' +
+                      '<div class="col col_9_12 no-padding latlng_field">' +
+                        '<label for="marker_lat" class="col col_1_12 lat_label">Lat:</label>' +
+                        '<input type="number" name="marker_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.00000000001" />' +
+                        '<label for="marker_lng" class="col col_1_12 lng_label">Lng:</label>' +
+                        '<input type="number" name="marker_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.00000000001" />' +
                       '</div>' +
                     '</div>' +
                   '</div>',
@@ -643,16 +665,26 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             var self = this;
             $html = $(this.html);
             $html.find('input[name="gizmo_name"]').val(marker.name);
-            $html.find('input[name="gizmo_lat"]').val(marker.lat);
-            $html.find('input[name="gizmo_lng"]').val(marker.lng);
+            $html.find('input[name="marker_lat"]').val(marker.lat);
+            $html.find('input[name="marker_lng"]').val(marker.lng);
+
+            if(marker.icon)
+              $html.find('input[name="marker_icon"]').val(marker.icon);
+
             callback($html);
           },
 
           update : function(marker, form) {
             $form = $(form);
             marker.name = $form.find('input[name="gizmo_name"]').val();
-            marker.lat = $form.find('input[name="gizmo_lat"]').val();
-            marker.lng = $form.find('input[name="gizmo_lng"]').val();
+            marker.lat = $form.find('input[name="marker_lat"]').val();
+            marker.lng = $form.find('input[name="marker_lng"]').val();
+
+            marker.icon = $form.find('input[name="marker_icon"]').val();
+            if(marker.icon != '')
+              marker.gm_marker.setIcon(marker.icon);
+            else
+              marker.gm_marker.setIcon(marker.mgm_map.getDefaults('marker').icon)
 
             marker.gm_marker.setPosition(mgm.utils.latLngToPos(marker));
           },
@@ -667,11 +699,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         standard : {
           html : '<div class="row mgm_stroke_color">' +
                     '<label for="gizmo_stroke_color" class="col col_3_12">Stroke color:</label>' +
-                    '<input type="text" name="gizmo_stroke_color" class="col col_9_12" />' +
+                    '<input type="text" name="gizmo_stroke_color" class="col col_9_12 color-field" />' +
                   '</div>' +
                   '<div class="row mgm_stroke_opacity">' +
                     '<label for="gizmo_stroke_opacity" class="col col_3_12">Stroke opacity:</label>' +
-                    '<input type="range" name="gizmo_stroke_opacity" class="col col_9_12" min="0.0" max="1.0" step="0.01" />' +
+                    '<input type="range" name="gizmo_stroke_opacity" class="col col_9_12 " min="0.0" max="1.0" step="0.01" />' +
                   '</div>' +
                   '<div class="row mgm_stroke_width">' +
                     '<label for="gizmo_stroke_width" class="col col_3_12">Stroke width:</label>' +
@@ -679,7 +711,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                   '</div>' +
                   '<div class="row mgm_fill_color">' +
                     '<label for="gizmo_fill_color" class="col col_3_12">Fill color:</label>' +
-                    '<input type="text" name="gizmo_fill_color" class="col col_9_12" />' +
+                    '<input type="text" name="gizmo_fill_color" class="col col_9_12 color-field" />' +
                   '</div>' +
                   '<div class="row mgm_fill_opacity">' +
                     '<label for="gizmo_fill_opacity" class="col col_3_12">Fill opacity:</label>' +
@@ -705,7 +737,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             gizmo.strokeWeight = $form.find('input[name="gizmo_stroke_width"]').val();
             gizmo.fillColor = $form.find('input[name="gizmo_fill_color"]').val();
             gizmo.fillOpacity = $form.find('input[name="gizmo_fill_opacity"]').val();
-            console.log(gizmo);
+
             this.refreshBinded(gizmo);
           },
 
@@ -733,7 +765,11 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         console.error("The content_form_provider has no provider with the key '" + provider_key + "'");
         return;
       }
-      this.providers[provider_key].render(gizmo, callback);
+      var _callback = function($html) {
+        mgm.wp_admin.prepareFormInputs($html);
+        callback($html);
+      };
+      this.providers[provider_key].render(gizmo, _callback);
     },
 
     setProvider : function(provider_key, provider) {
@@ -789,6 +825,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           return {
             'gizmo_type' : 'marker',
             'type' : 'standard',
+            'content_provider' : 'standard',
             'lat' : mgm.admin.utils.round(gm_marker.getPosition().lat()),
             'lng' : mgm.admin.utils.round(gm_marker.getPosition().lng())
           };
@@ -809,6 +846,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
           return {
             'gizmo_type' : 'polygon',
             'type' : 'standard',
+            'content_provider' : 'standard',
             'points' : points
           };
         }

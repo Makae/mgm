@@ -76,6 +76,8 @@ class Makae_GM {
 
     if(isset($map_meta['_mgm_map_data'])) {
       $map = json_decode(stripslashes($map_meta['_mgm_map_data']), true);
+      $map['map'] = Makae_GM_Utilities::array_extend_recursively($map['map'], $this->get_defaults('map-config'));
+      $map['map']['defaults'] = Makae_GM_Utilities::array_extend_recursively($map['map']['defaults'], $this->get_defaults('defaults'));
     } else {
       $map_config = $this->get_defaults('map-config');
       $map_config['defaults'] = $this->get_defaults('defaults');
@@ -148,11 +150,11 @@ class Makae_GM {
   }
 
   private function define_public_hooks() {
-
     $this->plugin_public = new Makae_GM_Public($this, $this->get_plugin_name(), $this->get_version());
     $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_styles', 50);
     $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_scripts', 50);
-    add_shortcode('rgm-map', array($this->plugin_public, 'shortcode_map'));
+    $this->loader->add_filter('template_include', $this->plugin_public, 'wp_template_map', 1);
+    add_shortcode('makae-googlemaps-map', array($this->plugin_public, 'shortcode_map'));
   }
 
   public function run() {
@@ -180,7 +182,8 @@ class Makae_GM {
             'type' => 'standard',
             'lat' => 40.712216,
             'lng' => -74.22655,
-            'zoom' => 12
+            'zoom' => 12,
+            'disableDefaultUI' => true
           )
         );
       break;

@@ -26,7 +26,12 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       });
     },
 
-    customImageUpload : function(context) {
+    prepareFormInputs : function(context) {
+      this.inputImageUpload(context);
+      this.inputColorPicker(context);
+    },
+
+    inputImageUpload : function(context) {
      var meta_image_frame;
      $(context).find('.image-upload').click(function(e){
        e.preventDefault();
@@ -51,6 +56,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
        // Opens the media library frame.
        meta_image_frame.open();
      });
+    },
+
+    inputColorPicker : function(context) {
+      $(context).find('.color-field').wpColorPicker();
     }
 
   };

@@ -34,9 +34,9 @@ class Makae_GM_Public {
   }
 
   public function shortcode_map($attrs) {
-     $attrs = shortcode_atts( array(
+     $attrs = shortcode_atts(array(
         'mapid' => null,
-    ), $attrs);
+   ), $attrs);
 
     if($attrs['mapid'] == null)
       return "<h3>No Mapdata found</h3>";
@@ -46,8 +46,18 @@ class Makae_GM_Public {
 
   }
 
+  public function wp_template_map($template_path) {
+    if(array_key_exists('makae-map', $_REQUEST)) {
+      if($theme_file = locate_template(array('single-makae_map.php')))
+        return $theme_file;
+      return MAKAE_GM_PLUGIN_DIR . 'single-makae_map.php';
+    }
+    return $template_path;
+  }
+
   public function enqueue_styles() {
-    wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/makae-gm-public.css', array(), $this->version, 'all' );
+    wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/makae-gm-public.css', array(), $this->version, 'all');
+    $appended_styles = Makae_GM_Utilities::enqueue_dependent_styles($this->plugin_core->get_enqueued_styles(), array($this->plugin_name));
   }
 
   public function enqueue_scripts() {

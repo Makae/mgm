@@ -18,14 +18,17 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   mgm.MGM_Map.prototype.init = function(map_dom) {
-   var self = this;
-   var mapOptions = {
-        center: mgm.utils.latLngToPos(this.config),
-        zoom: this.config.zoom
-      };
+    var self = this;
+    var map_config = this.loadDefaults(this.config, 'map');
+    var gm_config = {
+      'center': mgm.utils.latLngToPos(map_config),
+      'zoom': parseInt(map_config.zoom),
+      'disableDefaultUI': map_config.disableDefaultUI
+    };
+
     this.map_dom = map_dom;
     this.map_root = $(map_dom).closest('.mgm_wrapper').get(0);
-    this.map = new google.maps.Map(map_dom, mapOptions);
+    this.map = new google.maps.Map(map_dom, gm_config);
 
     if(typeof this.config.overlay != 'undefined') {
       this.setOverlay(this.config.overlay);
@@ -51,6 +54,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
     };
 
+  /**
+   * Loads the defaultvalues inside the mapdefaults inside an object
+   * If the values not already exist
+   */
   mgm.MGM_Map.prototype.loadDefaults = function(object, key) {
     var values = this.getDefaults(key);
     for(var i in values)
@@ -347,7 +354,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
     fillOverlay : function(map, overlay, content) {
       var $overlay = $(map).closest('.mgm_wrapper').find('.mgm_gui_overlay').filter(overlay);
-      $overlay.removeClass('loading').find('.content_wrapper').html(content);
+      $overlay.removeClass('loading').find('.mgm_content_wrapper').html(content);
     }
 
   };

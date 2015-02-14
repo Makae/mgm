@@ -136,6 +136,10 @@ select.col {
   background-color: #AFAFAF;
 }
 
+.mgm_map img {
+  max-width: none;
+}
+
 .mgm_gui_overlay {
   z-index: 20;
   position: absolute;

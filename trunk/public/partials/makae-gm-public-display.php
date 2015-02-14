@@ -24,7 +24,7 @@ if(!function_exists('makae_gm_render_map')) {
     <div class="mgm_gui_overlay mgm_content_overlay">
       <span class="interaction close right" data-overlay="mgm_content_overlay">X</span>
       <div class="loading_animation"></div>
-      <div class="content_wrapper"></div>
+      <div class="mgm_content_wrapper"></div>
     </div>
 <?php
   if($menu_content) {
@@ -32,7 +32,7 @@ if(!function_exists('makae_gm_render_map')) {
     <div class="mgm_gui_overlay mgm_menu_overlay">
       <span class="interaction close left" data-overlay="mgm_menu_overlay">X</span>
       <div class="loading_animation"></div>
-      <div class="content_wrapper">
+      <div class="mgm_content_wrapper">
         <?= $menu_content ?>
       </div>
     </div>

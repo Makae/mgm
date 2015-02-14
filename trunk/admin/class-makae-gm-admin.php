@@ -106,7 +106,7 @@ class Makae_GM_Admin {
       'show_in_menu'       => true,
       'exclude_from_search'=> true,
       'query_var'          => true,
-      'rewrite'            => array('slug' => 'makae-map'),
+      'rewrite'            => array('slug' => 'makae-map', 'with_front' => false),
       'capability_type'    => 'post',
       'has_archive'        => true,
       'hierarchical'       => true,
@@ -117,43 +117,46 @@ class Makae_GM_Admin {
 
     register_post_type('makae-map', $args);
 
-    /* POST TYPE MAKAE-GIZMO */
-    $labels = array(
-      'name'               => _x('Map gizmos', 'post type general name', 'makae-gm'),
-      'singular_name'      => _x('Map gizmo', 'post type singular name', 'makae-gm'),
-      'menu_name'          => _x('Map gizmos', 'admin menu', 'makae-gm'),
-      'name_admin_bar'     => _x('Map gizmo', 'add new on admin bar', 'makae-gm'),
-      'add_new'            => _x('Create map gizmo', 'gizmo', 'makae-gm'),
-      'add_new_item'       => __('Create new map gizmo', 'makae-gm'),
-      'new_item'           => __('New map gizmo', 'makae-gm'),
-      'edit_item'          => __('Edit map gizmo', 'makae-gm'),
-      'view_item'          => __('View map gizmo', 'makae-gm'),
-      'all_items'          => __('All map gizmos', 'makae-gm'),
-      'search_items'       => __('Search map gizmos', 'makae-gm'),
-      'parent_item_colon'  => __('Parent map gizmos:', 'makae-gm'),
-      'not_found'          => __('No map gizmos found.', 'makae-gm'),
-      'not_found_in_trash' => __('No map gizmos found in Trash.', 'makae-gm')
-    );
+    // /* POST TYPE MAKAE-GIZMO */
+    // $labels = array(
+    //   'name'               => _x('Map gizmos', 'post type general name', 'makae-gm'),
+    //   'singular_name'      => _x('Map gizmo', 'post type singular name', 'makae-gm'),
+    //   'menu_name'          => _x('Map gizmos', 'admin menu', 'makae-gm'),
+    //   'name_admin_bar'     => _x('Map gizmo', 'add new on admin bar', 'makae-gm'),
+    //   'add_new'            => _x('Create map gizmo', 'gizmo', 'makae-gm'),
+    //   'add_new_item'       => __('Create new map gizmo', 'makae-gm'),
+    //   'new_item'           => __('New map gizmo', 'makae-gm'),
+    //   'edit_item'          => __('Edit map gizmo', 'makae-gm'),
+    //   'view_item'          => __('View map gizmo', 'makae-gm'),
+    //   'all_items'          => __('All map gizmos', 'makae-gm'),
+    //   'search_items'       => __('Search map gizmos', 'makae-gm'),
+    //   'parent_item_colon'  => __('Parent map gizmos:', 'makae-gm'),
+    //   'not_found'          => __('No map gizmos found.', 'makae-gm'),
+    //   'not_found_in_trash' => __('No map gizmos found in Trash.', 'makae-gm')
+    // );
 
-    $args = array(
-      'labels'             => $labels,
-      'public'             => false,
-      'publicly_queryable' => false,
-      'show_ui'            => false,
-      'show_in_menu'       => false,
-      'exclude_from_search'=> true,
-      'query_var'          => true,
-      'rewrite'            => array('slug' => 'makae-map-gizmo-type'),
-      'capability_type'    => 'post',
-      'hierarchical'       => false,
-      'supports'           => array('title')
-    );
+    // $args = array(
+    //   'labels'             => $labels,
+    //   'public'             => false,
+    //   'publicly_queryable' => false,
+    //   'show_ui'            => false,
+    //   'show_in_menu'       => false,
+    //   'exclude_from_search'=> true,
+    //   'query_var'          => true,
+    //   'rewrite'            => array('slug' => 'mytype', 'with_front' => false),
+    //   'capability_type'    => 'post',
+    //   'hierarchical'       => false,
+    //   'supports'           => array('title')
+    // );
 
-    register_post_type('makae-map-gizmo', $args);
+    // register_post_type('makae-map-gizmo', $args);
   }
 
   public function enqueue_styles() {
-    wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/makae-gm-admin.css', array(), $this->version, 'all');
+    // Color picker
+    wp_enqueue_style('wp-color-picker');
+
+    wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/makae-gm-admin.css', array('wp-color-picker'), $this->version, 'all');
     foreach($this->plugin_core->get_enqueued_styles() as $data) {
       $data['dependencies'] = array_merge($data['dependencies'], array($this->plugin_name));
       wp_enqueue_style($data['name'], $data['path'], $data['dependencies'], $data['version']);
@@ -166,7 +169,7 @@ class Makae_GM_Admin {
       wp_enqueue_media();
     }
 
-    wp_enqueue_script('makae-gm-admin', plugin_dir_url(__FILE__) . 'js/mgm-admin.js', array('makae-gm-core'), $this->version, true);
+    wp_enqueue_script('makae-gm-admin', plugin_dir_url(__FILE__) . 'js/mgm-admin.js', array('wp-color-picker', 'makae-gm-core'), $this->version, true);
     wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/makae-gm-admin.js', array('makae-gm-admin'), $this->version, true);
 
     $dependency_core = array($this->plugin_name);
