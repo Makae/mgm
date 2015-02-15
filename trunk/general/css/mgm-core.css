@@ -29,6 +29,8 @@ body, html {
   -moz-box-shadow:    -3px 0px 18px -1px rgba(50, 50, 50, 0.25);
   box-shadow:         -3px 0px 18px -1px rgba(50, 50, 50, 0.25);
 }
+
+
 /*********************
  *      GLOBAL       *
  *********************/
@@ -121,7 +123,7 @@ select.col {
 
 
 .mgm_wrapper {
-  z-index: 1;
+  z-index: 3;
   position: relative;
 }
 
@@ -148,8 +150,8 @@ select.col {
   padding:14px;
 
   height: 100%;
-  min-width: 30%;
-  max-width: 80%;
+  /*min-width: 30%;*/
+  max-width: 95%;
   background: rgba(255, 255, 255, 0.9);
 
   -webkit-transition:all 200ms ease-in-out;
@@ -161,18 +163,20 @@ select.col {
 
 .mgm_content_overlay {
   left: 0;
-  -webkit-transform:translate3d(-100%, 0, 0);
-  -moz-transform:translate3d(-100%, 0, 0);
-  -ms-transform:translate3d(-100%, 0, 0);
-  transform:translate3d(-100%, 0, 0);
+  /* 105% for accomondating box-shadow */
+  -webkit-transform:translate3d(-105%, 0, 0);
+  -moz-transform:translate3d(-105%, 0, 0);
+  -ms-transform:translate3d(-105%, 0, 0);
+  transform:translate3d(-105%, 0, 0);
 }
 
 .mgm_menu_overlay {
   right: 0;
-  -webkit-transform:translate3d(100%, 0, 0);
-  -moz-transform:translate3d(100%, 0, 0);
-  -ms-transform:translate3d(100%, 0, 0);
-  transform:translate3d(100%, 0, 0);
+  /* 105% for accomondating box-shadow */
+  -webkit-transform:translate3d(105%, 0, 0);
+  -moz-transform:translate3d(105%, 0, 0);
+  -ms-transform:translate3d(105%, 0, 0);
+  transform:translate3d(105%, 0, 0);
 }
 
 .mgm_gui_overlay.visible {
@@ -206,7 +210,7 @@ select.col {
   display: block;
   z-index: 15;
   padding: 14px;
-  top: 0;
+  top: 3px;
 
   line-height: 0;
   cursor: pointer;
@@ -226,7 +230,7 @@ select.col {
 
 .mgm_wrapper .interaction.menu {
   right: 0;
-
+  padding: 28px;
   background: rgba(255, 255, 255, 0.9);
 }
 

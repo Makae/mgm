@@ -17,7 +17,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     this.map = null;
   };
 
-  mgm.MGM_Map.prototype.init = function(map_dom) {
+  mgm.MGM_Map.prototype.init = function(map_dom, idx) {
     var self = this;
     var map_config = this.loadDefaults(this.config, 'map');
     var gm_config = {
@@ -25,9 +25,13 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       'zoom': parseInt(map_config.zoom),
       'disableDefaultUI': map_config.disableDefaultUI
     };
+    this.idx = idx;
+    var mgm_wrapper = $(map_dom).closest('.mgm_wrapper');
+    mgm_wrapper.attr('data-map-idx', this.idx);
 
     this.map_dom = map_dom;
-    this.map_root = $(map_dom).closest('.mgm_wrapper').get(0);
+    $(this.map_dom).attr('data-map-idx', idx);
+    this.map_root = mgm_wrapper.get(0);
     this.map = new google.maps.Map(map_dom, gm_config);
 
     if(typeof this.config.overlay != 'undefined') {
@@ -211,6 +215,17 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     return gizmos;
   };
 
+  mgm.MGM_Map.prototype.setMapType = function(type) {
+    this.map.setMapTypeId(type);
+  };
+
+  mgm.MGM_Map.prototype.toggleOverlay = function(enabled) {
+    if(enabled)
+      this.overlay.setMap(this.map);
+    else
+      this.overlay.setMap(null);
+  };
+
   mgm.MGM_Map.prototype.getConfig = function() {
     return this.config;
   };
@@ -230,7 +245,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         var config = JSON.parse($(this).attr('data-map'));
         var map = new mgm.MGM_Map(config.map);
 
-        map.init(this);
+        map.init(this, self.maps.length);
         self.maps.push(map);
 
         // Load gizmos and set type values if none are set
@@ -292,6 +307,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     },
 
     loadContent : function(gizmo) {
+      if(gizmo.content_provider == 'standard' || typeof gizmo.content_provider == 'undefined')
+        return;
       var self = this;
       var overlay = '.mgm_content_overlay';
       this.hideAllOverlays(gizmo.mgm_map.map_dom, function() {

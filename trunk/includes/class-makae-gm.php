@@ -211,6 +211,9 @@ class Makae_GM {
 
   public function enqueue_styles() {
     wp_enqueue_style('makae-gm-core', Makae_GM_Utilities::pluginUrl(__FILE__, 'general/css/mgm-core.css'), array(), $this->version, 'all');
+
+    if(array_key_exists('makae-map', $_REQUEST))
+      wp_enqueue_style('makae-gm-single', Makae_GM_Utilities::pluginUrl(__FILE__, 'general/css/mgm-single.css'), array(), $this->version, 'all');
   }
 
   public function enqueue_scripts() {

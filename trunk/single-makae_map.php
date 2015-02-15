@@ -1,12 +1,11 @@
 <?php
- /*Template Name: New Template
- */
+include_once('header-makae_map.php');
 
-get_header(); ?>
-<div id="primary">
-    <div id="content" role="main">
-    <?= do_shortcode('[makae-googlemaps-map mapid="' . the_ID() . '"]') ?>
-    </div>
-</div>
-<?php wp_reset_query(); ?>
-<?php get_footer(); ?>
+$id = array_key_exists('makae-map', $_REQUEST) ? $_REQUEST['makae-map'] : the_ID();
+$matches = array();
+preg_match('/(\d+)(-\d)/', $id, $matches);
+echo do_shortcode('[makae-googlemaps-map mapid="' . $matches[1] . '" standalone="1"]');
+
+wp_reset_query();
+
+include_once('footer-makae_map.php');
