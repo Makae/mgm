@@ -1,0 +1,48 @@
+.ac_results {
+  padding: 0px;
+  border: 1px solid #66CC00;
+  border-radius: 3px 3px 3px 3px;
+  outline: medium none;
+  background-color: white;
+  overflow: hidden;
+  z-index: 99999;
+  margin: 2px 0 0 0;
+  font: 12px/18px Arial,Helvetica,sans-serif !important;
+}
+
+.ac_results ul {
+  width: 100%;
+  list-style-position: outside;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0 0;
+}
+
+.ac_results li {
+  margin: 0px;
+  padding: 2px 5px;
+  cursor: default;
+  display: block;
+  line-height: 16px;
+  overflow: hidden;
+}
+.ac_results li strong{
+    color:#56B004;
+}
+.ac_loading {
+  background: white url('../images/indicator.gif') right center no-repeat;
+}
+
+.ac_odd {
+  background-color: #ee;
+}
+
+.ac_over {
+    background-color: #8FC160;
+    color: #FFF;
+}
+.ac_over strong{
+    background-color: #8FC160;
+    color: #054515 !important;
+}
+
