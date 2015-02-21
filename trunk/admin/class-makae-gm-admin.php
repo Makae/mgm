@@ -117,6 +117,41 @@ class Makae_GM_Admin {
 
     register_post_type('makae-map', $args);
 
+    $labels = array(
+      'name'               => _x('Map content', 'post type general name', 'makae-gm'),
+      'singular_name'      => _x('Map content', 'post type singular name', 'makae-gm'),
+      'menu_name'          => _x('Map content', 'admin menu', 'makae-gm'),
+      'name_admin_bar'     => _x('Map content', 'add new on admin bar', 'makae-gm'),
+      'add_new'            => _x('New map content', 'map', 'makae-gm'),
+      'add_new_item'       => __('Create new map content', 'makae-gm'),
+      'new_item'           => __('New map content', 'makae-gm'),
+      'edit_item'          => __('Edit map content', 'makae-gm'),
+      'view_item'          => __('View map content', 'makae-gm'),
+      'all_items'          => __('All map content', 'makae-gm'),
+      'search_items'       => __('Search map content', 'makae-gm'),
+      'parent_item_colon'  => __('Parent map content:', 'makae-gm'),
+      'not_found'          => __('No map content found.', 'makae-gm'),
+      'not_found_in_trash' => __('No map content found in Trash.', 'makae-gm')
+    );
+
+    $args = array(
+      'labels'             => $labels,
+      'public'             => true,
+      'publicly_queryable' => true,
+      'show_ui'            => true,
+      'show_in_menu'       => false,
+      'exclude_from_search'=> true,
+      'query_var'          => true,
+      'rewrite'            => array('slug' => 'makae-map-content-post', 'with_front' => false),
+      'capability_type'    => 'post',
+      'has_archive'        => true,
+      'hierarchical'       => true,
+      'menu_position'      => 64,
+      'supports'           => array('title', 'editor'),
+      'menu_icon'          => 'dashicons-media-text'
+    );
+    register_post_type('makae-map-content', $args);
+
     // /* POST TYPE MAKAE-GIZMO */
     // $labels = array(
     //   'name'               => _x('Map gizmos', 'post type general name', 'makae-gm'),
@@ -152,15 +187,27 @@ class Makae_GM_Admin {
     // register_post_type('makae-map-gizmo', $args);
   }
 
+  public function register_menu() {
+    add_submenu_page('edit.php?post_type=makae-map',
+      _x('Map content', 'post type general name', 'makae-gm'),
+      _x('Map content', 'post type general name', 'makae-gm'),
+      'edit_post',
+      'edit.php?post_type=makae-map-content');
+  }
+
   public function enqueue_styles() {
     // Color picker
     wp_enqueue_style('wp-color-picker');
 
     wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/makae-gm-admin.css', array('wp-color-picker'), $this->version, 'all');
+    wp_enqueue_style('jquery-autocomplete', plugin_dir_url(__FILE__) . 'js/libs/jquery-autocomplete/jquery-ui.min.css', array(), $this->version, 'all');
+    wp_enqueue_style('mgm-jquery-autocomplete', plugin_dir_url(__FILE__) . 'css/jquery.autocomplete.custom.css', array('jquery-autocomplete'), $this->version, 'all');
+
     foreach($this->plugin_core->get_enqueued_styles() as $data) {
       $data['dependencies'] = array_merge($data['dependencies'], array($this->plugin_name));
       wp_enqueue_style($data['name'], $data['path'], $data['dependencies'], $data['version']);
     }
+
   }
 
   public function enqueue_scripts() {
@@ -170,6 +217,7 @@ class Makae_GM_Admin {
     }
 
     wp_enqueue_script('makae-gm-admin', plugin_dir_url(__FILE__) . 'js/mgm-admin.js', array('wp-color-picker', 'makae-gm-core'), $this->version, true);
+    wp_enqueue_script('jQuery-autocomplete', plugin_dir_url(__FILE__) . 'js/libs/jquery-autocomplete/jquery-ui-custom-autocomplete-min.js', array('jquery'), $this->version, true);
     wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/makae-gm-admin.js', array('makae-gm-admin'), $this->version, true);
 
     $dependency_core = array($this->plugin_name);
@@ -182,6 +230,81 @@ class Makae_GM_Admin {
     $init_dependencies = array_merge($init_dependencies, $appended_scripts);
 
     wp_enqueue_script($this->plugin_name . '_init', Makae_GM_Utilities::pluginURL(__FILE__, 'general/js/mgm-init.js'), $init_dependencies, $this->version, true);
+  }
+
+  public function wp_localize_scripts() {
+    $config = array(
+      'ajax_url' => admin_url('admin-ajax.php'),
+      'cp_posts' => array(
+        'ajax_params' =>
+          array(
+            'ac' => array('action' => 'makae_gm_get_posts', 'post_type' => 'makae-map-content'),
+            'post_id' => array('action' => 'makae_gm_get_post_name')
+          )
+      )
+    );
+    wp_localize_script($this->plugin_name . '_content', 'makae_gm_content_config', $config);
+  }
+
+  /**
+   * Adds an additional filter value "_name__like"
+   *
+   * @from: http://wordpress.stackexchange.com/questions/136714/wp-query-get-posts-by-category-and-similar-name-like
+   */
+  public function post_like_name($where, $q) {
+    if($name__like = $q->get('_name__like')) {
+      global $wpdb;
+      $where .= $wpdb->prepare(" AND LOWER({$wpdb->posts}.post_name) LIKE %s ", preg_replace("/\*+/", '%', $wpdb->esc_like( $name__like)));
+    }
+    return $where;
+  }
+
+  public function ajax_get_post_name() {
+    $post_id = array_key_exists('post_id', $_REQUEST) ? $_REQUEST['post_id'] : false;
+    if(!$post_id)
+      die(json_encode(array('content' => '')));
+    $response = array(
+      'content' => $this->_post_ac_name(get_post($post_id))
+    );
+    echo json_encode($response);
+    die();
+  }
+
+  public function ajax_get_posts() {
+    error_reporting(E_ALL);
+    ini_set("display_errors", 1);
+
+    $post_type = array_key_exists('post_type', $_REQUEST) ? $_REQUEST['post_type'] : 'makae-map-content';
+    $term = array_key_exists('term', $_REQUEST) ? $_REQUEST['term'] : false;
+    if(!$term)
+      die("No term provided");
+
+    $args = array(
+      'posts_per_page'   => 6,
+      'offset'           => 0,
+      'orderby'          => 'post_name',
+      'order'            => 'ASC',
+      'include'          => '',
+      'post_type'        => $post_type,
+      'post_status'      => 'publish',
+      '_name__like'      => '*' . $term . '*',
+      'suppress_filters' => false
+    );
+
+    $content = array();
+    $posts = get_posts($args);
+    foreach($posts as $key => $post)
+      $content[] = $this->_post_ac_name($post);
+
+    $response = array(
+      'content' => $content
+    );
+    echo json_encode($response);
+    die();
+  }
+
+  private function _post_ac_name($post) {
+    return apply_filters('makae_gm_post_ac_name', "[{$post->ID}] {$post->post_name}", $post);
   }
 
 }

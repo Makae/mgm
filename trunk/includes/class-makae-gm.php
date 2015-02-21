@@ -120,11 +120,6 @@ class Makae_GM {
   }
 
   private function init() {
-    $this->registered_gizmos = array(
-      'marker' => array(
-
-       )
-    );
   }
 
   private function define_general_hooks () {
@@ -144,9 +139,13 @@ class Makae_GM {
 
     $this->loader->add_action('admin_enqueue_scripts', $this->plugin_admin, 'enqueue_styles');
     $this->loader->add_action('admin_enqueue_scripts', $this->plugin_admin, 'enqueue_scripts');
-
+    $this->loader->add_action('admin_enqueue_scripts', $this->plugin_admin, 'wp_localize_scripts', 100);
+    $this->loader->add_filter('admin_menu', $this->plugin_admin, 'register_menu');
     $this->loader->add_filter('upload_mimes', $this, 'cc_mime_types');
+    $this->loader->add_filter('posts_where', $this->plugin_admin, 'post_like_name', 10, 2);
 
+    $this->loader->add_action('wp_ajax_makae_gm_get_posts', $this->plugin_admin,'ajax_get_posts');
+    $this->loader->add_action('wp_ajax_makae_gm_get_post_name', $this->plugin_admin,'ajax_get_post_name');
   }
 
   private function define_public_hooks() {
