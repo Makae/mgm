@@ -262,12 +262,9 @@ class Makae_GM_Admin {
   public function ajax_get_post_name() {
     $post_id = array_key_exists('post_id', $_REQUEST) ? $_REQUEST['post_id'] : false;
     if(!$post_id)
-      die(json_encode(array('content' => '')));
-    $response = array(
-      'content' => $this->_post_ac_name(get_post($post_id))
-    );
-    echo json_encode($response);
-    die();
+      Makae_GM_Utilities::jsonResponse('', __('No PostID provided', 'makae-gm'));
+
+    Makae_GM_Utilities::jsonResponse($this->_post_ac_name(get_post($post_id)));
   }
 
   public function ajax_get_posts() {

@@ -389,18 +389,18 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                 '<div class="row">' +
                   '<span class="col col_3_12 label">Bottom-Left:</span>' +
                   '<div class="col col_9_12 no-padding latlng_field">' +
-                    '<label for="viewport_tr_lat" class="col col_1_12 lat_label">Lat:</label>' +
+                    '<label for="viewport_bl_lat" class="col col_1_12 lat_label">Lat:</label>' +
                     '<input type="number" name="viewport_bl_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.00000000001" />' +
-                    '<label for="viewport_tr_lng" class="col col_1_12 lng_label">Lng:</label>' +
+                    '<label for="viewport_bl_lng" class="col col_1_12 lng_label">Lng:</label>' +
                     '<input type="number" name="viewport_bl_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.00000000001" />' +
                   '</div>' +
                 '</div>' +
                 '<div class="row">' +
                   '<span class="col col_3_12 label">Top-Right:</span>' +
                   '<div class="col col_9_12 no-padding latlng_field">' +
-                    '<label for="viewport_bl_lat" class="col col_1_12 lat_label">Lat:</label>' +
+                    '<label for="viewport_tr_lat" class="col col_1_12 lat_label">Lat:</label>' +
                     '<input type="number" name="viewport_tr_lat" class="col col_3_12 lat_field" min="-90" max="90" step="0.00000000001" />' +
-                    '<label for="viewport_bl_lng" class="col col_1_12 lng_label">Lng:</label>' +
+                    '<label for="viewport_tr_lng" class="col col_1_12 lng_label">Lng:</label>' +
                     '<input type="number" name="viewport_tr_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.00000000001" />' +
                   '</div>' +
                 '</div>' +
@@ -443,25 +443,49 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             $html.find('input[name="map_lat"]').val(map.config.lat);
             $html.find('input[name="map_lng"]').val(map.config.lng);
 
+            this.initOverlayConfig($html);
+            this.initBoundsConfig($html);
+            callback($html);
+          },
 
-            var overlay_config = map.config.overlay;
-            if(typeof overlay_config != 'undefined') {
-              if(typeof overlay_config.image != 'undefined') {
-                $html.find('input[name="overlay_image"]').val(overlay_config.image);
-              }
-
-              if(typeof overlay_config.top_right_coords != 'undefined') {
-                $html.find('input[name="overlay_tr_lat"]').val(overlay_config.top_right_coords.lat);
-                $html.find('input[name="overlay_tr_lng"]').val(overlay_config.top_right_coords.lng);
-              }
-
-              if(typeof overlay_config.bottom_left_coords != 'undefined') {
-                $html.find('input[name="overlay_bl_lat"]').val(overlay_config.bottom_left_coords.lat);
-                $html.find('input[name="overlay_bl_lng"]').val(overlay_config.bottom_left_coords.lng);
-              }
+          initOverlayConfig : function($html) {
+            var bounds_config = map.config.bounds;
+            if(typeof bounds_config.top_right_coords != 'undefined') {
+              $html.find('input[name="bounds_tr_lat"]').val(bounds_config.top_right_coords.lat);
+              $html.find('input[name="bounds_tr_lng"]').val(bounds_config.top_right_coords.lng);
             }
 
-            callback($html);
+            if(typeof bounds_config.bottom_left_coords != 'undefined') {
+              $html.find('input[name="bounds_bl_lat"]').val(bounds_config.bottom_left_coords.lat);
+              $html.find('input[name="bounds_bl_lng"]').val(bounds_config.bottom_left_coords.lng);
+            }
+          },
+
+          initOverlayConfig : function($html) {
+            var overlay_config = map.config.overlay;
+            if(typeof overlay_config.image != 'undefined') {
+              $html.find('input[name="overlay_image"]').val(overlay_config.image);
+            }
+
+            if(typeof overlay_config.top_right_coords != 'undefined') {
+              $html.find('input[name="overlay_tr_lat"]').val(overlay_config.top_right_coords.lat);
+              $html.find('input[name="overlay_tr_lng"]').val(overlay_config.top_right_coords.lng);
+            }
+
+            if(typeof overlay_config.bottom_left_coords != 'undefined') {
+              $html.find('input[name="overlay_bl_lat"]').val(overlay_config.bottom_left_coords.lat);
+              $html.find('input[name="overlay_bl_lng"]').val(overlay_config.bottom_left_coords.lng);
+            }
+
+            if(typeof overlay_config.bottom_left_coords != 'undefined') {
+              $html.find('input[name="overlay_bl_lat"]').val(overlay_config.bottom_left_coords.lat);
+              $html.find('input[name="overlay_bl_lng"]').val(overlay_config.bottom_left_coords.lng);
+            }
+
+            if(typeof overlay_config.overlay != 'undefined') {
+              $html.find('input[name="overlay_bl_lat"]').val(overlay_config.bottom_left_coords.lat);
+              $html.find('input[name="overlay_bl_lng"]').val(overlay_config.bottom_left_coords.lng);
+            }
           },
 
           update : function(map, form) {

@@ -312,12 +312,16 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       var self = this;
       var overlay = '.mgm_content_overlay';
       this.hideAllOverlays(gizmo.mgm_map.map_dom, function() {
-        self.showOverlay(gizmo.mgm_map.map_dom, overlay);
+        self.clearOverlay(gizmo.mgm_map.map_dom, overlay);
+        self.showOverlay(gizmo.mgm_map.map_dom, overlay, true);
+        mgm.content_manager.callProvider(gizmo.content_provider, gizmo, function(content) {
+          self.fillOverlay(gizmo.mgm_map.map_dom, overlay, content);
+        });
       });
+    },
 
-      mgm.content_manager.callProvider(gizmo.content_provider, gizmo, function(content) {
-        self.fillOverlay(gizmo.mgm_map.map_dom, overlay, content);
-      });
+    clearOverlay : function(map, overlay, callback) {
+      $(map).closest('.mgm_wrapper').find('.mgm_gui_overlay').filter(overlay).find('.mgm_content_wrapper').html("");
     },
 
     hideOverlay : function(map, overlay, callback) {

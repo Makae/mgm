@@ -34,6 +34,17 @@ class Makae_GM_Utilities {
     return $array;
   }
 
+  public static function jsonResponse($content, $error=false) {
+    $response = array(
+      'content' => $content
+    );
+    if($error !== false)
+      $response['error'] = $error;
+    header('Content-Type: text/json; charset=UTF-8');
+    die(json_encode($response));
+
+  }
+
   public static function pluginDir($file,  $suffix='') {
     return WP_PLUGIN_DIR . '/' . self::pluginFolder($file) . '/' . $suffix;
   }

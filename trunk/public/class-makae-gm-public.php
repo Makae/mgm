@@ -46,6 +46,23 @@ class Makae_GM_Public {
 
   }
 
+  public function ajax_get_post() {
+    if(!array_key_exists('post_id', $_REQUEST))
+      die(__('No PostId provided', 'makae-gm'));
+
+    $post_id = $_REQUEST['post_id'];
+    $post = get_post($post_id);
+    if(!$post_status != 'publish')
+      die(__('This post is not public', 'makae-gm'));
+    Makae_GM_Utilities::jsonResponse($this->_format_post_response($post));
+  }
+
+  private function _format_post_response($post) {
+    $html = "<h5>{$post->post_title}</h5>";
+    $html .= "<div class=\"mgm_post_content\">{$post->post_content}</div>";
+    return $html;
+  }
+
   public function wp_template_map($template_path) {
     if(array_key_exists('makae-map', $_REQUEST)) {
       if($theme_file = locate_template(array('single-makae_map.php')))
@@ -61,7 +78,13 @@ class Makae_GM_Public {
   }
 
   public function enqueue_scripts() {
-    //wp_enqueue_script($this->plugin_name . '_content', plugin_dir_url(__FILE__) . 'js/mgm-content.js', array('makae-gm-core'), $this->version, true);
+    wp_enqueue_script('makae-cp-mapcontent', Makae_GM_Utilities::pluginUrl(__FILE__, 'public/js/mgm-cp-mapcontent.js'), array('jquery', 'google-maps-drawing'), $this->version, true);
+
+    $config = array(
+      'ajax_url' => admin_url('admin-ajax.php'),
+      'ajax_params' => array('action' => 'mgm_gm_get_post_content')
+    );
+    wp_localize_script('makae-cp-mapcontent', 'makae_gm_post_provider', $config);
     $appended_scripts = Makae_GM_Utilities::enqueue_dependent_scripts($this->plugin_core->get_enqueued_scripts(), array());
     $init_dependencies = array_merge(array('makae-gm-core'), $appended_scripts);
     wp_enqueue_script($this->plugin_name . '_init', Makae_GM_Utilities::pluginURL(__FILE__, 'general/js/mgm-init.js'), $init_dependencies, $this->version, true);

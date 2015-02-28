@@ -153,6 +153,8 @@ class Makae_GM {
     $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_styles', 50);
     $this->loader->add_action('wp_enqueue_scripts', $this->plugin_public, 'enqueue_scripts', 50);
     $this->loader->add_filter('template_include', $this->plugin_public, 'wp_template_map', 1);
+    $this->loader->add_action('wp_ajax_mgm_gm_get_post_content', $this->plugin_public,'ajax_get_post');
+    $this->loader->add_action('wp_ajax_nopriv_mgm_gm_get_post_content', $this->plugin_public,'ajax_get_post');
     add_shortcode('makae-googlemaps-map', array($this->plugin_public, 'shortcode_map'));
   }
 
