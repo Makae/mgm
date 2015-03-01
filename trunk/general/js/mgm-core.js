@@ -38,7 +38,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       this.setOverlay(this.config.overlay);
     }
 
-    if(typeof bounds != 'undefined')
+    if(typeof this.config.bounds != 'undefined')
       this.setBounds(this.config.bounds);
   };
 

@@ -382,7 +382,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                   '<label for="map_zoom" class="col col_3_12 lat_label">Zoom:</label>' +
                   '<input type="number" name="map_zoom" class="col col_9_12" min="1" max="21" step="1" />' +
                 '</div>' +
-
+/*
                 '<div class="row viewport_row">' +
                   '<h5 class="col col_12_12 label">Viewport Restrictions:</h5>' +
                 '</div>' +
@@ -403,7 +403,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
                     '<label for="viewport_tr_lng" class="col col_1_12 lng_label">Lng:</label>' +
                     '<input type="number" name="viewport_tr_lng" class="col col_3_12 lng_field" min="-180" max="180" step="0.00000000001" />' +
                   '</div>' +
-                '</div>' +
+                '</div>' +*/
               '</div>' +
               '<div class="col col_6_12 right">' +
                 '<div class="row viewport_row">' +
@@ -443,25 +443,36 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             $html.find('input[name="map_lat"]').val(map.config.lat);
             $html.find('input[name="map_lng"]').val(map.config.lng);
 
-            this.initOverlayConfig($html);
-            this.initBoundsConfig($html);
+            this.initOverlayConfig(map, $html);
+            //this.initBoundsConfig(map, $html);
             callback($html);
           },
 
-          initOverlayConfig : function($html) {
-            var bounds_config = map.config.bounds;
-            if(typeof bounds_config.top_right_coords != 'undefined') {
-              $html.find('input[name="bounds_tr_lat"]').val(bounds_config.top_right_coords.lat);
-              $html.find('input[name="bounds_tr_lng"]').val(bounds_config.top_right_coords.lng);
+          initBoundsConfig : function(map, $html) {
+            var viewport_config = map.config.bounds;
+
+            if(typeof overlay_config.top_right_coords != 'undefined') {
+              $html.find('input[name="viewport_tr_lat"]').val(viewport_config.top_right_coords.lat);
+              $html.find('input[name="viewport_tr_lng"]').val(viewport_config.top_right_coords.lng);
             }
 
-            if(typeof bounds_config.bottom_left_coords != 'undefined') {
-              $html.find('input[name="bounds_bl_lat"]').val(bounds_config.bottom_left_coords.lat);
-              $html.find('input[name="bounds_bl_lng"]').val(bounds_config.bottom_left_coords.lng);
+            if(typeof viewport_config.bottom_left_coords != 'undefined') {
+              $html.find('input[name="viewport_bl_lat"]').val(viewport_config.bottom_left_coords.lat);
+              $html.find('input[name="viewport_bl_lng"]').val(viewport_config.bottom_left_coords.lng);
+            }
+
+            if(typeof viewport_config.bottom_left_coords != 'undefined') {
+              $html.find('input[name="viewport_bl_lat"]').val(viewport_config.bottom_left_coords.lat);
+              $html.find('input[name="viewport_bl_lng"]').val(viewport_config.bottom_left_coords.lng);
+            }
+
+            if(typeof viewport_config.overlay != 'undefined') {
+              $html.find('input[name="viewport_bl_lat"]').val(viewport_config.bottom_left_coords.lat);
+              $html.find('input[name="viewport_bl_lng"]').val(viewport_config.bottom_left_coords.lng);
             }
           },
 
-          initOverlayConfig : function($html) {
+          initOverlayConfig : function(map, $html) {
             var overlay_config = map.config.overlay;
             if(typeof overlay_config.image != 'undefined') {
               $html.find('input[name="overlay_image"]').val(overlay_config.image);
