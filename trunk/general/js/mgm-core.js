@@ -9,7 +9,8 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
   // Add it to the MGM-object such that the map is publicly available
   mgm.MGM_Map = function(config) {
-    this.config = config;
+    this.instance_config = config;
+    this.config = config.map;
 
     this.gizmos = {};
     this.gizmo_counter = 0;
@@ -243,7 +244,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
       $(this.config.map_selector).each(function() {
         var config = JSON.parse($(this).attr('data-map'));
-        var map = new mgm.MGM_Map(config.map);
+        var map = new mgm.MGM_Map(config);
 
         map.init(this, self.maps.length);
         self.maps.push(map);
@@ -376,6 +377,53 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     fillOverlay : function(map, overlay, content) {
       var $overlay = $(map).closest('.mgm_wrapper').find('.mgm_gui_overlay').filter(overlay);
       $overlay.removeClass('loading').find('.mgm_content_wrapper').html(content);
+    },
+
+
+    /**
+     * Register a listener for the callbacks of the admin
+     *
+     * The callbacks are registered via jQuery.
+     *
+     */
+    registerListener : function(event, callback) {
+      $(window).on(event, callback);
+    },
+
+    /**
+     * Register a listener for the callbacks of the admin
+     *
+     * The callbacks are registered via jQuery
+     *
+     */
+    unregisterListener : function(event_name, callback) {
+      $(window).off(event_name, callback);
+    },
+
+
+    /**
+     * Triggers a hook or a normal callback routine
+     *
+     * @param string event_name The name of the hook / event
+     * @param object data The name passed to the hook
+     *
+     * @param empty cb_part The old / updated data values are returned
+     * @param string cb_part The part of the response done by the callbacks should be returned
+     * @param boolean<true> cb_part The returned value from the hook is returned
+     */
+    _trigger : function(event_name, data, cb_part) {
+      data.mgm = mgm;
+      var cb_data = $(window).triggerHandler(event_name, data);
+
+      cb_data = typeof cb_data == 'undefined' ? data : cb_data;
+
+      if(cb_part === true)
+        return cb_data;
+
+      if(typeof cb_part == 'undefined' || cb_data[cb_part] == 'undefined')
+        return data;
+
+      return data[cb_part];
     }
 
   };
@@ -485,12 +533,21 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   mgm.content_manager = {
-    callProvider : function(key, gizmo, callback) {
+    callProvider : function(key, gizmo, callback, allow_alternatives) {
+      var allow_alternatives = typeof allow_alternatives == 'undefined' ? true : false;
       if(typeof this.providers[key] == 'undefined') {
         console.error("The content_manager has no provider with the key '" + key + "'");
         return;
       }
-      this.providers[key](gizmo, callback);
+
+      var alternative = false;
+      if(allow_alternatives)
+        alternative = mgm._trigger('mgm.content_manager.call.handler', {'mgm': mgm, 'key': key, 'gizmo': gizmo}, true);
+
+      if(typeof alternative == 'function')
+        alternative(gizmo, callback);
+      else
+        this.providers[key](gizmo, callback);
     },
 
     setProvider : function(key, call) {

@@ -5,7 +5,7 @@
  **/
 var mgm = typeof mgm != 'undefined' ? mgm : {};
 (function($) {
-  var temp_admin_config = {
+  var default_admin_config = {
     'll_dec_points' : 6
   };
 
@@ -108,8 +108,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
     current_gizmo : null,
     state_machine : null,
     config : {},
+
     init : function() {
-      this.config = temp_admin_config;
+      this.config = default_admin_config;
       for(var i in mgm.maps) {
         this.initDrawingManager(mgm.maps[i])
         this.registerAdminHandlers(mgm.maps[i]);
@@ -190,6 +191,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         mgm.content_form_provider.getProvider('general_fields', 'standard').update(gizmo, $form);
         mgm.content_form_provider.getProvider(gizmo.content_provider).update(gizmo, $form);
 
+        // 3rd-Party Hooks
+        mgm._trigger('mgm.admin.provider.gizmo.update', {map:map, gizmo: gizmo, form: $form});
+
         self.hideEdit(map);
       });
 
@@ -197,6 +201,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
         var $form = $(this).closest('.mgm_form');
 
         mgm.form_provider.getProvider('config').update(map, $form);
+
+        // 3rd-Party Hooks
+        mgm._trigger('mgm.admin.provider.config.update', {map: map, form: $form});
 
         self.hideEdit(map);
       });
@@ -306,6 +313,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
      *
      */
     loadGeneralFields : function(map, gizmo) {
+      var self = this;
       // Load generic fields which are the same each time
       var $generic = $(map.map_root).find('.mgm_edit_wrapper').find('.generic');
 
@@ -316,7 +324,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
       // Fields like name and content-provider selection are used of all gizmos no mater the type
       var loadGeneralFields = function(data) {
+        data = mgm._trigger('mgm.admin.provider.general.load', {data: data, map: map, gizmo: gizmo}, 'data');
         $generic.html(data);
+
         mgm.form_provider.renderProvider(gizmo.gizmo_type, gizmo.type, gizmo, loadGeneralGizmoFields);
       }
 
@@ -331,24 +341,47 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
       var $specific = $(map.map_root).find('.mgm_edit_wrapper').find('.specific');
 
       var loadSpecific = function(data) {
+        var data = mgm._trigger('mgm.admin.provider.gizmo.load', {map: map, gizmo: gizmo, data: data}, 'data');
+
         $specific.html(data);
+
+        mgm._trigger('mgm.admin.provider.gizmo.appended', {map: map, gizmo: gizmo, data: data}, 'data');
       };
 
       mgm.content_form_provider.renderProvider(gizmo.content_provider, gizmo, loadSpecific);
     }
+
   };
 
   mgm.form_provider = {
     renderProvider : function(provider_type, provider_key, obj, callback) {
+      var self = this;
+      var _callback = function($html) {
+        mgm.wp_admin.prepareFormInputs($html);
+
+        callback($html);
+
+        self.callProvider(provider_type, provider_key, obj, null, 'appended')
+      }
+      this.callProvider(provider_type, provider_key, obj, _callback, 'render');
+    },
+
+    callProvider : function(provider_type, provider_key, obj, callback, method) {
       if(typeof this.providers[provider_type] == 'undefined' || this.providers[provider_type][provider_key] == 'undefined') {
         console.error("The form_provider has no provider with the type '" + provider_type + "' and the key '" + provider_key + "'");
         return;
       }
-      var _callback = function($html) {
-        mgm.wp_admin.prepareFormInputs($html);
-        callback($html);
+
+      var _callback = function(data) {
+        if(typeof callback == 'function')
+          callback(data);
       };
-      this.providers[provider_type].standard.render(obj, _callback);
+
+      var provider = this.getProvider(provider_type, provider_key);
+      if(typeof provider[method] == 'function')
+        provider[method](obj, _callback);
+      else
+        _callback(null);
     },
 
     setProvider : function(provider_type, provider_key, provider) {
@@ -648,6 +681,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
               var selected = provider == gizmo.content_provider ? ' selected="selected" ' : '';
               html += '<option value="' + provider + '" ' + selected +'>' + provider + '</option>\n';
             }
+
+            // 3rd-Party Hook
+            html = mgm._trigger('mgm.admin.provider.select.html', {gizmo: gizmo, html: html}, 'html');
+
             return html;
           },
 
@@ -735,25 +772,31 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
       polygon : {
         standard : {
-          html : '<div class="row mgm_stroke_color">' +
-                    '<label for="gizmo_stroke_color" class="col col_3_12">Stroke color:</label>' +
-                    '<input type="text" name="gizmo_stroke_color" class="col col_9_12 color-field" />' +
-                  '</div>' +
-                  '<div class="row mgm_stroke_opacity">' +
-                    '<label for="gizmo_stroke_opacity" class="col col_3_12">Stroke opacity:</label>' +
-                    '<input type="range" name="gizmo_stroke_opacity" class="col col_9_12 " min="0.0" max="1.0" step="0.01" />' +
-                  '</div>' +
-                  '<div class="row mgm_stroke_width">' +
-                    '<label for="gizmo_stroke_width" class="col col_3_12">Stroke width:</label>' +
-                    '<input type="text" name="gizmo_stroke_width" class="col col_9_12" />' +
-                  '</div>' +
-                  '<div class="row mgm_fill_color">' +
-                    '<label for="gizmo_fill_color" class="col col_3_12">Fill color:</label>' +
-                    '<input type="text" name="gizmo_fill_color" class="col col_9_12 color-field" />' +
-                  '</div>' +
-                  '<div class="row mgm_fill_opacity">' +
-                    '<label for="gizmo_fill_opacity" class="col col_3_12">Fill opacity:</label>' +
-                    '<input type="range" name="gizmo_fill_opacity" class="col col_9_12" min="0.0" max="1.0" step="0.01" />' +
+          styles_open : false,
+          html : '<div class="mgm_group mgm_group-styles closed">' +
+                    '<div class="mgm_group_title">Styles</div>' +
+                    '<div class="mgm_group_content">' +
+                      '<div class="row mgm_stroke_color">' +
+                        '<label for="gizmo_stroke_color" class="col col_3_12">Stroke color:</label>' +
+                        '<input type="text" name="gizmo_stroke_color" class="col col_9_12 color-field" />' +
+                      '</div>' +
+                      '<div class="row mgm_stroke_opacity">' +
+                        '<label for="gizmo_stroke_opacity" class="col col_3_12">Stroke opacity:</label>' +
+                        '<input type="range" name="gizmo_stroke_opacity" class="col col_9_12 " min="0.0" max="1.0" step="0.01" />' +
+                      '</div>' +
+                      '<div class="row mgm_stroke_width">' +
+                        '<label for="gizmo_stroke_width" class="col col_3_12">Stroke width:</label>' +
+                        '<input type="text" name="gizmo_stroke_width" class="col col_9_12" />' +
+                      '</div>' +
+                      '<div class="row mgm_fill_color">' +
+                        '<label for="gizmo_fill_color" class="col col_3_12">Fill color:</label>' +
+                        '<input type="text" name="gizmo_fill_color" class="col col_9_12 color-field" />' +
+                      '</div>' +
+                      '<div class="row mgm_fill_opacity">' +
+                        '<label for="gizmo_fill_opacity" class="col col_3_12">Fill opacity:</label>' +
+                        '<input type="range" name="gizmo_fill_opacity" class="col col_9_12" min="0.0" max="1.0" step="0.01" />' +
+                      '</div>' +
+                    '</div>' +
                   '</div>',
 
           render : function(gizmo, callback) {
@@ -765,7 +808,43 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
             $html.find('input[name="gizmo_stroke_width"]').val(gizmo.strokeWeight);
             $html.find('input[name="gizmo_fill_color"]').val(gizmo.fillColor);
             $html.find('input[name="gizmo_fill_opacity"]').val(gizmo.fillOpacity);
+
             callback($html);
+          },
+
+          appended : function(html, callback) {
+            var self = this;
+            if(this.styles_open)
+              $('.mgm_group-styles')
+                .removeClass("closed")
+                .addClass("open")
+                .find(".mgm_group_content")
+                .slideDown(400);
+            else
+              $('.mgm_group-styles')
+                .removeClass("open")
+                .addClass("closed")
+                .find(".mgm_group_content")
+                .slideUp(400);
+
+            $('.mgm_group-styles .mgm_group_title').click(function(e) {
+              self.styles_open = !self.styles_open;
+
+              if(self.styles_open)
+                $(this).closest('.mgm_group-styles')
+                  .removeClass("closed")
+                  .addClass("open")
+                  .find(".mgm_group_content")
+                  .slideDown(400);
+              else
+                $(this).closest('.mgm_group-styles')
+                  .removeClass("open")
+                  .addClass("closed")
+                  .find(".mgm_group_content")
+                  .slideUp(400);
+
+            });
+            callback();
           },
 
           update : function(gizmo, form) {

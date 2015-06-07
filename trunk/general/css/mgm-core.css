@@ -407,7 +407,7 @@ select.col {
 .mgm_edit label,
 .mgm_edit .label,
 .mgm_edit input {
-  padding: 0;
+  padding: 0.25em;
   margin: 0;
 }
 
@@ -427,6 +427,7 @@ select.col {
 
 .mgm_edit textarea {
   max-width: 100%;
+  padding: 0.25em;
 }
 
 /*

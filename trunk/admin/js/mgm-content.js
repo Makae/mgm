@@ -12,7 +12,7 @@
             '</div>',
 
     render : function(gizmo, callback) {
-      $html = $(this.html);
+      var $html = $(this.html);
       $html.find('textarea[name="gizmo_content_paragraph"]').val(gizmo.content_data);
       callback($html);
     },
