@@ -139,7 +139,7 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
    *       More Infos: https://developers.google.com/maps/documentation/javascript/customoverlays
    */
   mgm.MGM_Map.prototype.setOverlay = function(config) {
-    if(typeof this.overlay != 'undefined')
+    if(typeof this.overlay != 'undefined' && this.overlay)
       this.overlay.setMap(null);
 
     var bounds = new google.maps.LatLngBounds(mgm.utils.latLngToPos(config.bottom_left_coords),
@@ -152,6 +152,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   mgm.MGM_Map.prototype.addGizmo = function(gizmo) {
     if(typeof this.gizmos[gizmo.gizmo_type] == 'undefined')
       this.gizmos[gizmo.gizmo_type] = [];
+
+    if(typeof gizmo.content_data == 'undefined')
+      gizmo.content_data = {};
 
     gizmo.gizmoIdx = ++this.gizmo_counter;
 
@@ -221,6 +224,10 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
   };
 
   mgm.MGM_Map.prototype.toggleOverlay = function(enabled) {
+    if(typeof this.overlay == 'undefined'  || !this.overlay)
+      return;
+
+
     if(enabled)
       this.overlay.setMap(this.map);
     else
