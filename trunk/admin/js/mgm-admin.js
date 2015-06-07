@@ -474,6 +474,9 @@ var mgm = typeof mgm != 'undefined' ? mgm : {};
 
           initOverlayConfig : function(map, $html) {
             var overlay_config = map.config.overlay;
+            if(typeof overlay_config == 'undefined')
+              return;
+
             if(typeof overlay_config.image != 'undefined') {
               $html.find('input[name="overlay_image"]').val(overlay_config.image);
             }

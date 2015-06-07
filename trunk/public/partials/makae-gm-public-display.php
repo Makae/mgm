@@ -18,7 +18,7 @@ if(!function_exists('makae_gm_render_map')) {
     echo '<div class="mgm_wrapper public">';
     echo apply_filters('makae_gm_pre_map', '');
     if($menu_content) {
-      echo '<span class="interaction menu"><span class="menu_inner"></span></span>';
+      echo '<span class="interaction menu light-shadow-bottom light-shadow-left"><span class="menu_inner"></span></span>';
     }
 ?>
     <div class="mgm_gui_overlay mgm_content_overlay light-shadow-right">
